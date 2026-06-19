@@ -1,0 +1,30 @@
+{
+  "name": "berry-clothing",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "node -e \"const fs=require('fs'); ['.next','.next-cache'].forEach((dir)=>fs.rmSync(dir,{recursive:true,force:true}));\"",
+    "dev": "next dev",
+    "prebuild": "node -e \"const fs=require('fs'); ['.next','.next-cache'].forEach((dir)=>fs.rmSync(dir,{recursive:true,force:true}));\"",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "clsx": "^2.1.1",
+    "firebase": "^12.14.0",
+    "next": "^15.3.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.8.3"
+  }
+}
