@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const { isAuthenticated, isReady } = useCustomerSession();
+  const { isAuthenticated, isReady, customer } = useCustomerSession();
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#f1d9dd] bg-[rgba(255,250,248,0.92)] backdrop-blur-xl">
@@ -45,12 +45,19 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-4 text-sm">
-          <Link
-            href={isReady && isAuthenticated ? "/account" : "/login"}
-            className="font-medium text-black/70 transition hover:text-berry-700"
-          >
-            Account
-          </Link>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link
+              href={isReady && isAuthenticated ? "/account" : "/login"}
+              className="font-medium text-black/70 transition hover:text-berry-700"
+            >
+              Sign In
+            </Link>
+            {isReady && isAuthenticated && customer?.name ? (
+              <span className="max-w-[70px] truncate text-xs font-semibold text-berry-700 sm:max-w-none">
+                {customer.name}
+              </span>
+            ) : null}
+          </div>
           <Link
             href="/cart"
             className="rounded-full bg-ink px-4 py-2 text-white transition hover:bg-[#2b1b22] hover:text-[#ffd5e1]"

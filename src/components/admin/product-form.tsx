@@ -366,15 +366,15 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     event.preventDefault();
     setMessage("");
 
-    let uploadedImages: EditableProductImage[] = [];
+    let uploadFailed = false;
 
-    try {
-      uploadedImages = await Promise.all(
-        images.map(async (image) => {
-          if (!image.file) {
-            return image;
-          }
+    const uploadedImages = await Promise.all(
+      images.map(async (image) => {
+        if (!image.file) {
+          return image;
+        }
 
+        try {
           const response = await uploadCloudinaryAsset(image.file, (progress) => {
             setImages((current) =>
               current.map((entry) =>
@@ -390,15 +390,24 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
             uploadProgress: 100,
             uploadError: undefined,
             file: undefined,
-            resourceType: response.resource_type === "video" ? "video" : "image"
+            resourceType: (response.resource_type === "video" ? "video" : "image") as "image" | "video"
           };
-        })
-      );
+        } catch (error) {
+          uploadFailed = true;
+          const errorMessage = error instanceof Error ? error.message : "Upload failed.";
+          return {
+            ...image,
+            uploadProgress: undefined,
+            uploadError: errorMessage
+          };
+        }
+      })
+    );
 
-      setImages(uploadedImages);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Product upload failed.";
-      setMessage(`Upload error: ${errorMessage}`);
+    setImages(uploadedImages);
+
+    if (uploadFailed) {
+      setMessage("Some media uploads failed. Please remove failed items or try again.");
       return;
     }
 

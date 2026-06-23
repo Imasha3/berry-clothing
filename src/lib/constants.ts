@@ -4,9 +4,9 @@ import type { OrderStatus } from "@/types/order";
 export const siteNavLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
-  { href: "/about", label: "About" },
   { href: "/size-guide", label: "Size Guide" },
-  { href: "/faq", label: "FAQ" },
+  { href: "/about", label: "About" },
+  { href: "/faq", label: "Q&A" },
   { href: "/contact", label: "Contact" }
 ];
 
