@@ -25,6 +25,7 @@ export interface ProductImage {
   id: string;
   url: string;
   previewUrl?: string;
+  resourceType?: "image" | "video";
   alt?: string;
 }
 

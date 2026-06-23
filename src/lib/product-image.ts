@@ -1,6 +1,7 @@
 export interface ResolvableProductImageSource {
   url?: string;
   previewUrl?: string;
+  resourceType?: "image" | "video";
   alt?: string;
 }
 

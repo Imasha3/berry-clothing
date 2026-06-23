@@ -12,6 +12,7 @@ import {
 } from "@/components/providers/commerce-store-provider";
 import { useMockCategories } from "@/lib/categories";
 import { cn } from "@/lib/utils";
+import { uploadCloudinaryAsset } from "@/lib/cloudinary";
 import type {
   Product,
   ProductAvailabilityStatus,
@@ -30,6 +31,9 @@ interface EditableProductImage {
   name: string;
   isMain: boolean;
   storedPreviewUrl?: string;
+  uploadProgress?: number;
+  uploadError?: string;
+  resourceType?: "image" | "video";
 }
 
 interface ProductFormProps {
@@ -63,30 +67,45 @@ function mapProductImages(images: ProductImageRecord[]) {
     previewUrl: image.previewUrl || image.url,
     name: image.alt || image.id,
     isMain: false,
-    storedPreviewUrl: image.url
+    storedPreviewUrl: image.url,
+    resourceType: image.resourceType ?? (image.url.includes("/video/") ? "video" : "image")
   }));
+}
+
+function isEphemeralMediaUrl(value?: string) {
+  if (!value) {
+    return false;
+  }
+
+  return (
+    value.startsWith("blob:") ||
+    value.startsWith("data:") ||
+    value.startsWith("file:") ||
+    value.startsWith("C:\\")
+  );
+}
+
+function getPersistableImageUrl(image: EditableProductImage) {
+  const candidate = image.storedPreviewUrl ?? image.previewUrl;
+  return candidate && !isEphemeralMediaUrl(candidate) ? candidate : "";
+}
+
+function createPersistableProductImage(image: EditableProductImage) {
+  const url = getPersistableImageUrl(image);
+  const resourceType =
+    image.resourceType ?? (url.includes("/video/") ? "video" : "image");
+
+  return {
+    id: image.id,
+    url,
+    previewUrl: url,
+    resourceType,
+    alt: image.name
+  };
 }
 
 function createVariantId() {
   return `variant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error("Unable to read file as data URL."));
-    };
-
-    reader.onerror = () => reject(reader.error ?? new Error("Unable to read file."));
-    reader.readAsDataURL(file);
-  });
 }
 
 export function ProductForm({ mode, initialProduct }: ProductFormProps) {
@@ -290,22 +309,23 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       return;
     }
 
-      const hasMainImage = images.some((image) => image.isMain);
-      const nextImages = await Promise.all(
-      uploadedFiles.map(async (file, index) => {
-        const objectUrl = URL.createObjectURL(file);
-        objectUrlsRef.current.push(objectUrl);
+    const hasMainImage = images.some((image) => image.isMain);
+    const nextImages = uploadedFiles.map((file, index) => {
+      const objectUrl = URL.createObjectURL(file);
+      objectUrlsRef.current.push(objectUrl);
 
-        return {
-          id: `upload-${Date.now()}-${index}`,
-          file,
-          previewUrl: objectUrl,
-          name: file.name,
-          isMain: !hasMainImage && index === 0,
-          storedPreviewUrl: await readFileAsDataUrl(file)
-        };
-      })
-    );
+      const resourceType = file.type.startsWith("video/") ? "video" : "image";
+
+      return {
+        id: `upload-${Date.now()}-${index}`,
+        file,
+        previewUrl: objectUrl,
+        name: file.name,
+        isMain: !hasMainImage && index === 0,
+        resourceType,
+        uploadProgress: 0
+      } as EditableProductImage;
+    });
 
     setImages((current) => [...current, ...nextImages]);
     setFailedPreviewImageIds((current) => current.filter((id) => !nextImages.some((image) => image.id === id)));
@@ -342,18 +362,59 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     );
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setMessage("");
+
+    const pendingUploads = images.filter((image) => image.file);
+
+    try {
+      await Promise.all(
+        pendingUploads.map(async (image) => {
+          const response = await uploadCloudinaryAsset(image.file!, (progress) => {
+            setImages((current) =>
+              current.map((entry) =>
+                entry.id === image.id ? { ...entry, uploadProgress: progress } : entry
+              )
+            );
+          });
+
+          setImages((current) =>
+            current.map((entry) =>
+              entry.id === image.id
+                ? {
+                    ...entry,
+                    previewUrl: response.secure_url,
+                    storedPreviewUrl: response.secure_url,
+                    uploadProgress: 100,
+                    uploadError: undefined,
+                    file: undefined,
+                    resourceType: response.resource_type === "video" ? "video" : "image"
+                  }
+                : entry
+            )
+          );
+        })
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Product upload failed.";
+      setMessage(`Upload error: ${errorMessage}`);
+      return;
+    }
+
     const stockQuantity = Number(fields.stockQuantity || 0);
     const minStockLevel = Number(fields.minStockLevel || 0);
-    const normalizedImages = images.map((image) => ({
-      id: image.id,
-      // Real persistent product image storage requires Cloudinary integration.
-      // Until then, we keep a frontend-only local preview source in the saved product data.
-      url: image.storedPreviewUrl || image.previewUrl || "",
-      previewUrl: image.storedPreviewUrl || image.previewUrl || "",
-      alt: image.name
-    }));
+    const normalizedImages = images.map((image) => {
+      const imageUrl = getPersistableImageUrl(image);
+      return {
+        id: image.id,
+        url: imageUrl,
+        previewUrl: imageUrl,
+        resourceType: image.resourceType ?? (imageUrl.includes("/video/") ? "video" : "image"),
+        alt: image.name
+      };
+    });
+
     const mainImage =
       normalizedImages.find((image) => images.find((entry) => entry.id === image.id)?.isMain)?.previewUrl ??
       normalizedImages[0]?.previewUrl ??
@@ -717,7 +778,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
           <input
             ref={inputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,video/*"
             multiple
             onChange={handleImageUpload}
             className="hidden"
@@ -737,24 +798,15 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
               return (
                 <div key={image.id} className="overflow-hidden rounded-[24px] bg-white ring-1 ring-black/8">
                   <div className="relative aspect-[4/5] bg-[#f7efed]">
-                    {image.previewUrl && !hasPreviewError ? (
-                      <img
-                        src={image.previewUrl}
-                        alt={image.name || "Product preview"}
-                        className="h-full w-full object-cover"
-                        onError={(event) => {
-                          setFailedPreviewImageIds((current) =>
-                            current.includes(image.id) ? current : [...current, image.id]
-                          );
-                        }}
-                      />
-                    ) : (
-                      <ProductImage
-                        source={null}
-                        alt={image.name || "Product preview"}
-                        fallbackLabel={fields.productName || "No Image"}
-                      />
-                    )}
+                    <ProductImage
+                      source={{
+                        url: image.previewUrl,
+                        previewUrl: image.previewUrl,
+                        resourceType: image.resourceType
+                      }}
+                      alt={image.name || "Product preview"}
+                      fallbackLabel={fields.productName || "No Image"}
+                    />
                     {image.isMain ? (
                       <span className="absolute left-3 top-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">
                         Main image
@@ -763,6 +815,20 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
                   </div>
                   <div className="space-y-3 p-4">
                     <p className="truncate text-sm text-black/60">{image.name || "Uploaded image"}</p>
+                    {image.uploadProgress != null && image.uploadProgress < 100 ? (
+                      <div className="space-y-2">
+                        <div className="h-2 overflow-hidden rounded-full bg-black/10">
+                          <div
+                            className="h-full bg-berry-500"
+                            style={{ width: `${image.uploadProgress}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-black/60">Uploading {image.uploadProgress}%</p>
+                      </div>
+                    ) : null}
+                    {image.uploadError ? (
+                      <p className="text-xs text-rose-600">{image.uploadError}</p>
+                    ) : null}
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"

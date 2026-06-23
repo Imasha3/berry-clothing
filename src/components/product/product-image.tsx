@@ -30,6 +30,18 @@ function getInitials(label: string) {
   return initials || "No Image";
 }
 
+function isVideoSource(source?: ProductImageSource | string | null, resolvedSource?: string) {
+  if (typeof source === "object" && source?.resourceType === "video") {
+    return true;
+  }
+
+  if (!resolvedSource) {
+    return false;
+  }
+
+  return /\.(mp4|webm|ogg|mov)(\?.*)?$/i.test(resolvedSource) || resolvedSource.includes("/video/");
+}
+
 export function ProductImage({
   source,
   alt,
@@ -39,6 +51,7 @@ export function ProductImage({
   fallbackClassName
 }: ProductImageProps) {
   const resolvedSource = useMemo(() => resolveProductImageSource(source), [source]);
+  const isVideo = useMemo(() => isVideoSource(source, resolvedSource), [source, resolvedSource]);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
@@ -59,6 +72,17 @@ export function ProductImage({
           {getInitials(fallbackLabel || alt)}
         </span>
       </div>
+    );
+  }
+
+  if (isVideo) {
+    return (
+      <video
+        src={resolvedSource}
+        controls
+        onError={() => setHasError(true)}
+        className={cn("h-full w-full object-cover", className, imageClassName)}
+      />
     );
   }
 

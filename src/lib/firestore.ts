@@ -109,7 +109,7 @@ export const firestoreCollectionPlan: FirestoreCollectionPlanItem[] = [
     purpose: "Manual payment receipt metadata linked to orders.",
     documentIdStrategy: "Auto ID.",
     requiredFields: ["orderId", "customerId", "fileName", "fileUrl", "status"],
-    notes: ["Firebase Storage is optional later if Cloudinary is not used for receipts."]
+    notes: ["Cloudinary is used for media uploads including receipts if needed."]
   }
 ];
 

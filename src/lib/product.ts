@@ -30,6 +30,7 @@ export function getProductImageSources(product: Product) {
     sources.push({
       url: source?.url,
       previewUrl: source?.previewUrl,
+      resourceType: source?.resourceType,
       alt: source?.alt
     });
   };
