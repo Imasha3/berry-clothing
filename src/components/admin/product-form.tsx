@@ -366,12 +366,16 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     event.preventDefault();
     setMessage("");
 
-    const pendingUploads = images.filter((image) => image.file);
+    let uploadedImages: EditableProductImage[] = [];
 
     try {
-      await Promise.all(
-        pendingUploads.map(async (image) => {
-          const response = await uploadCloudinaryAsset(image.file!, (progress) => {
+      uploadedImages = await Promise.all(
+        images.map(async (image) => {
+          if (!image.file) {
+            return image;
+          }
+
+          const response = await uploadCloudinaryAsset(image.file, (progress) => {
             setImages((current) =>
               current.map((entry) =>
                 entry.id === image.id ? { ...entry, uploadProgress: progress } : entry
@@ -379,23 +383,19 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
             );
           });
 
-          setImages((current) =>
-            current.map((entry) =>
-              entry.id === image.id
-                ? {
-                    ...entry,
-                    previewUrl: response.secure_url,
-                    storedPreviewUrl: response.secure_url,
-                    uploadProgress: 100,
-                    uploadError: undefined,
-                    file: undefined,
-                    resourceType: response.resource_type === "video" ? "video" : "image"
-                  }
-                : entry
-            )
-          );
+          return {
+            ...image,
+            previewUrl: response.secure_url,
+            storedPreviewUrl: response.secure_url,
+            uploadProgress: 100,
+            uploadError: undefined,
+            file: undefined,
+            resourceType: response.resource_type === "video" ? "video" : "image"
+          };
         })
       );
+
+      setImages(uploadedImages);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Product upload failed.";
       setMessage(`Upload error: ${errorMessage}`);
@@ -404,7 +404,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
     const stockQuantity = Number(fields.stockQuantity || 0);
     const minStockLevel = Number(fields.minStockLevel || 0);
-    const normalizedImages = images.map((image) => {
+    const normalizedImages = uploadedImages.map((image) => {
       const imageUrl = getPersistableImageUrl(image);
       return {
         id: image.id,
@@ -416,7 +416,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     });
 
     const mainImage =
-      normalizedImages.find((image) => images.find((entry) => entry.id === image.id)?.isMain)?.previewUrl ??
+      normalizedImages.find((image) => uploadedImages.find((entry) => entry.id === image.id)?.isMain)?.previewUrl ??
       normalizedImages[0]?.previewUrl ??
       "";
     const normalizedProduct: Product = {
