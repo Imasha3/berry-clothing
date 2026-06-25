@@ -12,6 +12,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     facebook: "",
     instagram: "",
     tiktok: "",
+    whatsapp: "",
     youtube: ""
   },
   bankDetails: {
@@ -20,6 +21,7 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
     accountNumber: "",
     branch: ""
   },
+  businessInfo: "",
   returnPolicy: "",
   exchangePolicy: ""
 };
@@ -30,5 +32,16 @@ export async function fetchStoreSettings(): Promise<StoreSettings> {
     return DEFAULT_STORE_SETTINGS;
   }
   const settings = (await response.json()) as StoreSettings;
-  return { ...DEFAULT_STORE_SETTINGS, ...settings };
+  return {
+    ...DEFAULT_STORE_SETTINGS,
+    ...settings,
+    socialLinks: {
+      ...DEFAULT_STORE_SETTINGS.socialLinks,
+      ...settings.socialLinks
+    },
+    bankDetails: {
+      ...DEFAULT_STORE_SETTINGS.bankDetails,
+      ...settings.bankDetails
+    }
+  };
 }

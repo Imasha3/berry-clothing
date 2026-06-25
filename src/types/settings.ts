@@ -2,6 +2,7 @@ export interface SocialLinks {
   facebook?: string;
   instagram?: string;
   tiktok?: string;
+  whatsapp?: string;
   youtube?: string;
 }
 
@@ -20,6 +21,7 @@ export interface StoreSettings {
   contactPhone?: string;
   address?: string;
   footerText?: string;
+  businessInfo?: string;
   socialLinks: SocialLinks;
   bankDetails: BankDetails;
   returnPolicy?: string;

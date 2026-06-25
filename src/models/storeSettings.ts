@@ -14,6 +14,7 @@ const storeSettingsSchema = new mongoose.Schema<StoreSettings>(
       facebook: { type: String, default: "" },
       instagram: { type: String, default: "" },
       tiktok: { type: String, default: "" },
+      whatsapp: { type: String, default: "" },
       youtube: { type: String, default: "" }
     },
     bankDetails: {
@@ -22,6 +23,7 @@ const storeSettingsSchema = new mongoose.Schema<StoreSettings>(
       accountNumber: { type: String, default: "" },
       branch: { type: String, default: "" }
     },
+    businessInfo: { type: String, default: "" },
     returnPolicy: { type: String, default: "" },
     exchangePolicy: { type: String, default: "" }
   },

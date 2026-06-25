@@ -1,7 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import nextConnect from "next-connect";
-import { connectToMongo } from "@/lib/mongodb";
-import { StoreSettingsModel } from "@/models/storeSettings";
+import { getStoreSettings, updateStoreSettings } from "@/lib/settings-service";
 import type { StoreSettings } from "@/types/settings";
 
 const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
@@ -14,53 +13,18 @@ const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
 });
 
 apiRoute.get(async (_req, res) => {
-  await connectToMongo();
-  const settings = await StoreSettingsModel.findOne().lean();
-
-  if (!settings) {
-    return res.status(200).json({
-      storeName: "Berry Clothing",
-      logo: "Berry",
-      description: "A modern Sri Lankan women’s fashion label bringing social-selling energy into a polished online shopping experience.",
-      contactEmail: "hello@berryclothing.lk",
-      contactPhone: "+94 77 123 4567",
-      address: "Colombo, Sri Lanka",
-      footerText: "Crafted with care for stylish women in Sri Lanka.",
-      socialLinks: {
-        facebook: "",
-        instagram: "",
-        tiktok: "",
-        youtube: ""
-      },
-      bankDetails: {
-        bankName: "",
-        accountName: "",
-        accountNumber: "",
-        branch: ""
-      },
-      returnPolicy: "",
-      exchangePolicy: ""
-    });
-  }
-
+  const settings = await getStoreSettings();
   res.status(200).json(settings);
 });
 
 apiRoute.put(async (req, res) => {
   const payload = req.body as Partial<StoreSettings>;
 
-  if (!payload.storeName || typeof payload.storeName !== "string") {
+  if (!payload.storeName?.trim()) {
     return res.status(400).json({ error: "Store name is required." });
   }
 
-  await connectToMongo();
-
-  const settings = await StoreSettingsModel.findOneAndUpdate({}, payload, {
-    new: true,
-    upsert: true,
-    setDefaultsOnInsert: true
-  }).lean();
-
+  const settings = await updateStoreSettings(payload);
   res.status(200).json(settings);
 });
 
