@@ -4,6 +4,7 @@ const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
 const VIDEO_FOLDER = "berry-clothing/videos";
+const PRODUCT_FOLDER = "berry-clothing/products";
 
 cloudinary.config({
   cloud_name: CLOUDINARY_CLOUD_NAME,
@@ -63,5 +64,41 @@ export async function listCloudinaryVideos() {
     format: resource.format,
     bytes: resource.bytes,
     duration: resource.duration
+  }));
+}
+
+export async function listCloudinaryProductImages() {
+  assertCloudinaryCredentials();
+
+  const response = await cloudinary.api.resources({
+    type: "upload",
+    resource_type: "image",
+    prefix: `${PRODUCT_FOLDER}/`,
+    max_results: 100,
+    direction: "desc"
+  });
+
+  return response.resources.map((resource: {
+    public_id: string;
+    secure_url: string;
+    created_at: string;
+    display_name?: string;
+    filename?: string;
+    format?: string;
+    bytes?: number;
+    width?: number;
+    height?: number;
+  }) => ({
+    id: resource.public_id,
+    url: resource.secure_url,
+    previewUrl: resource.secure_url,
+    publicId: resource.public_id,
+    alt: resource.display_name || resource.filename || resource.public_id.split("/").pop() || "Berry Clothing product image",
+    resourceType: "image" as const,
+    createdAt: resource.created_at,
+    format: resource.format,
+    bytes: resource.bytes,
+    width: resource.width,
+    height: resource.height
   }));
 }

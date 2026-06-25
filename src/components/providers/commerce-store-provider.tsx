@@ -94,7 +94,7 @@ interface PersistedCommerceStore {
 }
 
 const storageKey = "berry-commerce-store";
-const mockStoreVersion = "2026-06-25-catalog-v2";
+const mockStoreVersion = "2026-06-25-cloudinary-products-v1";
 const CommerceStoreContext = createContext<CommerceStoreState | undefined>(undefined);
 const legacyMockUserIds = new Set(["usr-1", "usr-2", "usr-3", "usr-4", "usr-5"]);
 
@@ -192,6 +192,52 @@ function normalizeProduct(product: Product): Product {
     stockQuantity,
     availabilityStatus: getAvailabilityStatus(stockQuantity, product.minStockLevel)
   };
+}
+
+interface CloudinaryProductImage {
+  id: string;
+  url: string;
+  previewUrl?: string;
+  alt?: string;
+  resourceType?: "image";
+}
+
+function applyCloudinaryProductImages(products: Product[], cloudinaryImages: CloudinaryProductImage[]) {
+  if (cloudinaryImages.length === 0) {
+    return products;
+  }
+
+  return products.map((product, index) => {
+    const image = cloudinaryImages[index % cloudinaryImages.length];
+    const nextImage = {
+      id: image.id || `cloudinary-product-${index}`,
+      url: image.url,
+      previewUrl: image.previewUrl || image.url,
+      resourceType: "image" as const,
+      alt: image.alt || product.productName
+    };
+
+    return {
+      ...product,
+      mainImage: nextImage.url,
+      images: [nextImage, ...product.images.filter((entry) => !entry.url.includes("images.unsplash.com"))]
+    };
+  });
+}
+
+async function fetchCloudinaryProductImages() {
+  try {
+    const response = await fetch("/api/product-images", { cache: "no-store" });
+    const data = await response.json().catch(() => []);
+
+    if (!response.ok || !Array.isArray(data)) {
+      return [];
+    }
+
+    return data.filter((image): image is CloudinaryProductImage => Boolean(image?.url));
+  } catch {
+    return [];
+  }
 }
 
 function isEphemeralFileUrl(value?: string) {
@@ -350,6 +396,16 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
       setActivityLog(sortByCreatedAt(nextStore.activityLog));
       setDataMode("mock");
       setIsReady(true);
+
+      void fetchCloudinaryProductImages().then((cloudinaryImages) => {
+        if (cancelled || cloudinaryImages.length === 0) {
+          return;
+        }
+
+        setProducts((currentProducts) =>
+          applyCloudinaryProductImages(currentProducts, cloudinaryImages).map(normalizeProduct)
+        );
+      });
     };
 
     if (!isFirebaseConfigured()) {
@@ -406,6 +462,16 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         setActivityLog(sortByCreatedAt(readPersistedStore().activityLog));
         setDataMode("firestore");
         setIsReady(true);
+
+        void fetchCloudinaryProductImages().then((cloudinaryImages) => {
+          if (cancelled || cloudinaryImages.length === 0) {
+            return;
+          }
+
+          setProducts((currentProducts) =>
+            applyCloudinaryProductImages(currentProducts, cloudinaryImages).map(normalizeProduct)
+          );
+        });
 
         unsubscribes = [
           onSnapshot(collection(db, firestoreCollections.products), (snapshot) => {
