@@ -9,7 +9,7 @@ export default function AdminInventoryDetailPage() {
   const params = useParams<{ productId: string }>();
   const { isReady, products, inventoryMovements } = useCommerceStore();
 
-  if (!isReady) {
+  if (!isReady || !params?.productId) {
     return null;
   }
 

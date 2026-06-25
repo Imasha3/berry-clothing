@@ -63,7 +63,7 @@ export function AdminShell({ children }: PropsWithChildren) {
                 href={module.href}
                 className={cn(
                   "block rounded-2xl px-4 py-3 text-sm transition",
-                  pathname.startsWith(module.href)
+                  pathname?.startsWith(module.href)
                     ? "bg-berry-500 text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}

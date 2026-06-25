@@ -22,6 +22,7 @@ export type Permission =
   | "users.manage"
   | "roles.manage"
   | "settings.manage"
+  | "videos.manage"
   | "email_templates.manage";
 
 export type ModuleKey =
@@ -35,6 +36,7 @@ export type ModuleKey =
   | "reports"
   | "promotions"
   | "reviews"
+  | "videos"
   | "users"
   | "roles"
   | "settings"

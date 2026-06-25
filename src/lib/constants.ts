@@ -56,6 +56,7 @@ export const adminModules: Array<{
   { key: "reports", href: "/admin/reports", label: "Reports" },
   { key: "promotions", href: "/admin/promotions", label: "Promotions" },
   { key: "reviews", href: "/admin/reviews", label: "Reviews" },
+  { key: "videos", href: "/admin/videos", label: "Videos" },
   { key: "users", href: "/admin/users", label: "Users & Permissions" },
   { key: "roles", href: "/admin/roles", label: "Roles" },
   { key: "settings", href: "/admin/settings", label: "Settings" }

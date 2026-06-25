@@ -8,7 +8,7 @@ export default function AccountOrderDetailPage() {
   const params = useParams<{ orderId: string }>();
   const { isReady, orders } = useCommerceStore();
 
-  if (!isReady) {
+  if (!isReady || !params?.orderId) {
     return null;
   }
 

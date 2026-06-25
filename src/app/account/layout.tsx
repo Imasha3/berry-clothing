@@ -13,7 +13,8 @@ export default function AccountLayout({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (isReady && !isAuthenticated) {
-      router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      const redirectTarget = pathname ?? "/";
+      router.replace(`/login?redirect=${encodeURIComponent(redirectTarget)}`);
     }
   }, [isAuthenticated, isReady, pathname, router]);
 

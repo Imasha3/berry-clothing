@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/layout/site-header";
 
 export function AppShell({ children }: PropsWithChildren) {
   const pathname = usePathname();
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname?.startsWith("/admin") ?? false;
 
   if (isAdminRoute) {
     return <>{children}</>;

@@ -9,7 +9,7 @@ export default function AdminEditProductPage() {
   const params = useParams<{ id: string }>();
   const { isReady, products } = useCommerceStore();
 
-  if (!isReady) {
+  if (!isReady || !params?.id) {
     return null;
   }
 

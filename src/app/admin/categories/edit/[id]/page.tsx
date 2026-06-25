@@ -10,7 +10,7 @@ export default function AdminEditCategoryPage() {
   const params = useParams<{ id: string }>();
   const { isReady, categories } = useMockCategories();
 
-  if (!isReady) {
+  if (!isReady || !params?.id) {
     return null;
   }
 

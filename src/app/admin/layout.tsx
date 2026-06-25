@@ -33,7 +33,8 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     }
 
     if (!isAuthenticated) {
-      router.replace(hasAdminAccounts ? `/admin/login?redirect=${encodeURIComponent(pathname)}` : "/admin/setup");
+      const redirectTarget = pathname ?? "/admin/dashboard";
+      router.replace(hasAdminAccounts ? `/admin/login?redirect=${encodeURIComponent(redirectTarget)}` : "/admin/setup");
     }
   }, [hasAdminAccounts, isAuthenticated, isReady, pathname, router]);
 
@@ -45,7 +46,7 @@ export default function AdminLayout({ children }: PropsWithChildren) {
     return null;
   }
 
-  const moduleKey = getAdminModuleFromPath(pathname);
+  const moduleKey = getAdminModuleFromPath(pathname ?? "");
   const canAccessCurrentModule = moduleKey ? canAccessModule(currentRole, moduleKey) : false;
 
   return (
