@@ -2,14 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { siteNavLinks } from "@/lib/constants";
 import { useCustomerSession } from "@/components/providers/customer-session-provider";
 import { cn } from "@/lib/utils";
+import type { StoreSettings } from "@/types/settings";
+import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 
 export function SiteHeader() {
   const pathname = usePathname();
   const { isAuthenticated, isReady, customer } = useCustomerSession();
+  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+
+  useEffect(() => {
+    fetchStoreSettings().then(setSettings).catch(() => {
+      setSettings(DEFAULT_STORE_SETTINGS);
+    });
+  }, []);
+
+  const socialLinks = settings.socialLinks;
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#f1d9dd] bg-[rgba(255,250,248,0.92)] backdrop-blur-xl">
@@ -24,7 +36,7 @@ export function SiteHeader() {
             className="h-12 w-auto rounded-full ring-1 ring-[#efc4ce] sm:h-14"
           />
           <div className="hidden sm:block">
-            <p className="font-display text-xl text-ink">Berry Clothing</p>
+            <p className="font-display text-xl text-ink">{settings.storeName}</p>
             <p className="text-xs uppercase tracking-[0.24em] text-berry-700">Boutique Wear</p>
           </div>
         </Link>

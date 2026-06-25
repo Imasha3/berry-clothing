@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
-import { berryFacebookPageUrl, paymentOptionsMessage } from "@/lib/constants";
+import type { StoreSettings } from "@/types/settings";
+import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 
 const links = [
   { href: "/about", label: "About Us" },
@@ -11,7 +12,10 @@ const links = [
   { href: "/terms", label: "Terms & Conditions" }
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const settings: StoreSettings = await fetchStoreSettings();
+  const socialLinks = settings.socialLinks;
+
   return (
     <footer className="border-t border-black/5 bg-[#fff8f7]">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
@@ -23,11 +27,8 @@ export function SiteFooter() {
             height={500}
             className="h-20 w-auto"
           />
-          <p className="mt-3 max-w-md text-sm leading-6 text-black/65">
-            A modern Sri Lankan women&apos;s fashion label bringing social-selling energy into a
-            polished online shopping experience.
-          </p>
-          <p className="mt-4 text-sm font-semibold text-berry-700">{paymentOptionsMessage}</p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-black/65">{settings.description}</p>
+          <p className="mt-4 text-sm font-semibold text-berry-700">{settings.footerText}</p>
         </div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-berry-700">Explore</p>
@@ -42,21 +43,55 @@ export function SiteFooter() {
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-berry-700">Contact</p>
           <div className="mt-4 space-y-3 text-sm text-black/65">
-            <p>Instagram & Facebook orders available daily</p>
-            <p>+94 77 123 4567</p>
-            <p>hello@berryclothing.lk</p>
-            <p>Colombo, Sri Lanka</p>
-            <a
-              href={berryFacebookPageUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 font-semibold text-berry-700 hover:text-berry-600"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-berry-100 text-sm">
-                f
-              </span>
-              Facebook
-            </a>
+            {settings.contactPhone ? <p>{settings.contactPhone}</p> : null}
+            {settings.contactEmail ? <p>{settings.contactEmail}</p> : null}
+            {settings.address ? <p>{settings.address}</p> : null}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {socialLinks.facebook ? (
+                <a
+                  href={socialLinks.facebook}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#4267b2] text-white"
+                  aria-label="Facebook"
+                >
+                  f
+                </a>
+              ) : null}
+              {socialLinks.instagram ? (
+                <a
+                  href={socialLinks.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#515bd4] text-white"
+                  aria-label="Instagram"
+                >
+                  in
+                </a>
+              ) : null}
+              {socialLinks.tiktok ? (
+                <a
+                  href={socialLinks.tiktok}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white"
+                  aria-label="TikTok"
+                >
+                  t
+                </a>
+              ) : null}
+              {socialLinks.youtube ? (
+                <a
+                  href={socialLinks.youtube}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#ff0000] text-white"
+                  aria-label="YouTube"
+                >
+                  y
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
