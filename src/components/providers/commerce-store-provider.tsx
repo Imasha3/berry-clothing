@@ -79,6 +79,7 @@ interface CommerceStoreState {
 }
 
 interface PersistedCommerceStore {
+  version?: string;
   products: Product[];
   categories: Category[];
   orders: Order[];
@@ -93,6 +94,7 @@ interface PersistedCommerceStore {
 }
 
 const storageKey = "berry-commerce-store";
+const mockStoreVersion = "2026-06-25-catalog-v2";
 const CommerceStoreContext = createContext<CommerceStoreState | undefined>(undefined);
 const legacyMockUserIds = new Set(["usr-1", "usr-2", "usr-3", "usr-4", "usr-5"]);
 
@@ -117,6 +119,7 @@ function normalizeStoredUsers(users: AdminUser[]) {
 
 function getDefaultStore(): PersistedCommerceStore {
   return {
+    version: mockStoreVersion,
     products: mockProducts,
     categories: mockCategories,
     orders: mockOrders,
@@ -145,7 +148,13 @@ function readPersistedStore(): PersistedCommerceStore {
     const parsed = JSON.parse(stored) as Partial<PersistedCommerceStore>;
     const defaults = getDefaultStore();
 
+    if (parsed.version !== mockStoreVersion) {
+      globalThis.localStorage.setItem(storageKey, JSON.stringify(defaults));
+      return defaults;
+    }
+
     return {
+      version: mockStoreVersion,
       products: parsed.products?.length ? parsed.products : defaults.products,
       categories: parsed.categories?.length ? parsed.categories : defaults.categories,
       orders: parsed.orders?.length ? parsed.orders : defaults.orders,
@@ -215,6 +224,7 @@ function sanitizePaymentReceiptForPersistence(receipt: FirestorePaymentReceipt):
 function sanitizePersistedStore(nextState: PersistedCommerceStore): PersistedCommerceStore {
   return {
     ...nextState,
+    version: mockStoreVersion,
     users: normalizeStoredUsers(nextState.users),
     orders: nextState.orders.map(sanitizeOrderForPersistence),
     paymentReceipts: nextState.paymentReceipts.map(sanitizePaymentReceiptForPersistence)
@@ -501,6 +511,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
 
   const persistCurrentMockStore = (overrides: Partial<PersistedCommerceStore>) => {
     const nextState: PersistedCommerceStore = {
+      version: mockStoreVersion,
       products,
       categories,
       orders,

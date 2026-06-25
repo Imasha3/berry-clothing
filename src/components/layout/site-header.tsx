@@ -14,6 +14,7 @@ export function SiteHeader() {
   const pathname = usePathname();
   const { isAuthenticated, isReady, customer } = useCustomerSession();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     fetchStoreSettings().then(setSettings).catch(() => {
@@ -21,11 +22,13 @@ export function SiteHeader() {
     });
   }, []);
 
-  const socialLinks = settings.socialLinks;
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-[#f1d9dd] bg-[rgba(255,250,248,0.92)] backdrop-blur-xl">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
           <Image
             src="/berry-logo.jpeg"
@@ -56,7 +59,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-4 text-sm">
+        <div className="hidden items-center gap-4 text-sm sm:flex">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href={isReady && isAuthenticated ? "/account" : "/login"}
@@ -77,7 +80,55 @@ export function SiteHeader() {
             Cart
           </Link>
         </div>
+        <button
+          type="button"
+          onClick={() => setIsMobileMenuOpen((current) => !current)}
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white shadow-soft transition hover:bg-berry-700 md:hidden"
+          aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isMobileMenuOpen}
+        >
+          <span className="sr-only">{isMobileMenuOpen ? "Close menu" : "Open menu"}</span>
+          <span className="flex flex-col gap-1.5">
+            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "translate-y-2 rotate-45")} />
+            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "opacity-0")} />
+            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "-translate-y-2 -rotate-45")} />
+          </span>
+        </button>
       </div>
+      {isMobileMenuOpen ? (
+        <div className="border-t border-[#f1d9dd] bg-[#fffaf8] px-4 pb-5 pt-2 shadow-[0_18px_35px_rgba(44,24,33,0.08)] md:hidden">
+          <nav className="mx-auto grid max-w-7xl gap-2">
+            {siteNavLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={cn(
+                  "rounded-2xl px-4 py-3 text-sm font-semibold transition",
+                  pathname === link.href
+                    ? "bg-[#ffe4eb] text-berry-700"
+                    : "bg-white/80 text-black/70 ring-1 ring-black/5 hover:bg-[#fff1f5] hover:text-berry-700"
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Link
+                href={isReady && isAuthenticated ? "/account" : "/login"}
+                className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black/70 ring-1 ring-black/5"
+              >
+                {isReady && isAuthenticated ? "Account" : "Sign In"}
+              </Link>
+              <Link
+                href="/cart"
+                className="rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white"
+              >
+                Cart
+              </Link>
+            </div>
+          </nav>
+        </div>
+      ) : null}
     </header>
   );
 }
