@@ -45,21 +45,22 @@ export const adminModules: Array<{
   key: ModuleKey;
   href: string;
   label: string;
+  icon: string;
 }> = [
-  { key: "dashboard", href: "/admin/dashboard", label: "Dashboard" },
-  { key: "products", href: "/admin/products", label: "Products" },
-  { key: "categories", href: "/admin/categories", label: "Categories" },
-  { key: "orders", href: "/admin/orders", label: "Orders" },
-  { key: "payments", href: "/admin/payments", label: "Payments" },
-  { key: "inventory", href: "/admin/inventory", label: "Inventory" },
-  { key: "customers", href: "/admin/customers", label: "Customers" },
-  { key: "reports", href: "/admin/reports", label: "Reports" },
-  { key: "promotions", href: "/admin/promotions", label: "Promotions" },
-  { key: "reviews", href: "/admin/reviews", label: "Reviews" },
-  { key: "videos", href: "/admin/videos", label: "Videos" },
-  { key: "users", href: "/admin/users", label: "Users & Permissions" },
-  { key: "roles", href: "/admin/roles", label: "Roles" },
-  { key: "settings", href: "/admin/settings", label: "Settings" }
+  { key: "dashboard", href: "/admin/dashboard", label: "Dashboard", icon: "⌂" },
+  { key: "products", href: "/admin/products", label: "Products", icon: "◈" },
+  { key: "categories", href: "/admin/categories", label: "Categories", icon: "▦" },
+  { key: "orders", href: "/admin/orders", label: "Orders", icon: "◷" },
+  { key: "payments", href: "/admin/payments", label: "Payments", icon: "₨" },
+  { key: "inventory", href: "/admin/inventory", label: "Inventory", icon: "▣" },
+  { key: "customers", href: "/admin/customers", label: "Customers", icon: "♡" },
+  { key: "reports", href: "/admin/reports", label: "Reports", icon: "▤" },
+  { key: "promotions", href: "/admin/promotions", label: "Promotions", icon: "✦" },
+  { key: "reviews", href: "/admin/reviews", label: "Reviews", icon: "★" },
+  { key: "videos", href: "/admin/videos", label: "Video Management", icon: "▶" },
+  { key: "users", href: "/admin/users", label: "Users & Permissions", icon: "◎" },
+  { key: "roles", href: "/admin/roles", label: "Roles", icon: "◇" },
+  { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" }
 ];
 
 export const orderWorkflow: OrderStatus[] = [

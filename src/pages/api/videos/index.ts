@@ -3,9 +3,7 @@ import nextConnect from "next-connect";
 import multer from "multer";
 import path from "path";
 import os from "os";
-import { VideoModel } from "@/models/video";
-import { connectToMongo } from "@/lib/mongodb";
-import { uploadVideoToCloudinary } from "@/lib/cloudinary-server";
+import { listCloudinaryVideos, uploadVideoToCloudinary } from "@/lib/cloudinary-server";
 
 interface VideoUploadRequest extends NextApiRequest {
   file?: Express.Multer.File;
@@ -49,8 +47,7 @@ const apiRoute = nextConnect<VideoUploadRequest, NextApiResponse>({
 apiRoute.use(upload.single("video"));
 
 apiRoute.get(async (_req, res) => {
-  await connectToMongo();
-  const videos = await VideoModel.find().sort({ createdAt: -1 }).lean();
+  const videos = await listCloudinaryVideos();
   res.status(200).json(videos);
 });
 
@@ -64,13 +61,15 @@ apiRoute.post(async (req, res) => {
 
   try {
     const uploadResponse = await uploadVideoToCloudinary(file.path, file.originalname);
-    await connectToMongo();
 
-    const video = await VideoModel.create({
+    const video = {
+      id: uploadResponse.public_id,
       title,
       videoUrl: uploadResponse.secure_url,
-      publicId: uploadResponse.public_id
-    });
+      publicId: uploadResponse.public_id,
+      createdAt: uploadResponse.created_at ?? new Date().toISOString(),
+      updatedAt: uploadResponse.created_at ?? new Date().toISOString()
+    };
 
     return res.status(201).json(video);
   } catch (error) {

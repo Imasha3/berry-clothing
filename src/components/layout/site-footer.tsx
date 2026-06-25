@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import type { StoreSettings } from "@/types/settings";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 
@@ -12,9 +15,29 @@ const links = [
   { href: "/terms", label: "Terms & Conditions" }
 ];
 
-export async function SiteFooter() {
-  const settings: StoreSettings = await fetchStoreSettings();
-  const socialLinks = settings.socialLinks;
+export function SiteFooter() {
+  const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+
+  useEffect(() => {
+    fetchStoreSettings()
+      .then((nextSettings) => {
+        setSettings({
+          ...DEFAULT_STORE_SETTINGS,
+          ...nextSettings,
+          socialLinks: {
+            ...DEFAULT_STORE_SETTINGS.socialLinks,
+            ...nextSettings.socialLinks
+          },
+          bankDetails: {
+            ...DEFAULT_STORE_SETTINGS.bankDetails,
+            ...nextSettings.bankDetails
+          }
+        });
+      })
+      .catch(() => setSettings(DEFAULT_STORE_SETTINGS));
+  }, []);
+
+  const socialLinks = settings.socialLinks ?? DEFAULT_STORE_SETTINGS.socialLinks;
 
   return (
     <footer className="border-t border-black/5 bg-[#fff8f7]">
@@ -27,8 +50,8 @@ export async function SiteFooter() {
             height={500}
             className="h-20 w-auto"
           />
-          <p className="mt-3 max-w-md text-sm leading-6 text-black/65">{settings.description}</p>
-          <p className="mt-4 text-sm font-semibold text-berry-700">{settings.footerText}</p>
+          <p className="mt-3 max-w-md text-sm leading-6 text-black/65">{settings.description || DEFAULT_STORE_SETTINGS.description}</p>
+          <p className="mt-4 text-sm font-semibold text-berry-700">{settings.footerText || DEFAULT_STORE_SETTINGS.footerText}</p>
         </div>
         <div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-berry-700">Explore</p>

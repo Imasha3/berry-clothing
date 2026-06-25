@@ -8,6 +8,7 @@ import { StatCard } from "@/components/common/stat-card";
 import { ProductGrid } from "@/components/product/product-grid";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { buttonStyles } from "@/components/ui/button";
+import { LatestFashionVideos } from "@/components/video/latest-fashion-videos";
 import { berryFacebookPageUrl, paymentOptionsMessage } from "@/lib/constants";
 
 export default function HomePage() {
@@ -219,6 +220,8 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      <LatestFashionVideos />
     </div>
   );
 }

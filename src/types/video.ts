@@ -5,4 +5,7 @@ export interface Video {
   publicId: string;
   createdAt: string;
   updatedAt: string;
+  format?: string;
+  bytes?: number;
+  duration?: number;
 }

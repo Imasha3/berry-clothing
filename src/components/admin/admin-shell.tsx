@@ -62,13 +62,16 @@ export function AdminShell({ children }: PropsWithChildren) {
                 key={module.href}
                 href={module.href}
                 className={cn(
-                  "block rounded-2xl px-4 py-3 text-sm transition",
+                  "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
                   pathname?.startsWith(module.href)
                     ? "bg-berry-500 text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 )}
               >
-                {module.label}
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs">
+                  {module.icon}
+                </span>
+                <span>{module.label}</span>
               </Link>
             ))}
           </nav>

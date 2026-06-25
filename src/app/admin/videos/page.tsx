@@ -12,6 +12,7 @@ export default function AdminVideosPage() {
   const [title, setTitle] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [feedback, setFeedback] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -22,10 +23,14 @@ export default function AdminVideosPage() {
     setIsLoading(true);
     try {
       const response = await fetch("/api/videos");
-      const data = await response.json();
+      const data = await response.json().catch(() => []);
       if (response.ok) {
-        setVideos(data);
+        setVideos(Array.isArray(data) ? data : []);
+      } else {
+        setFeedback(data?.error || "Could not load videos.");
       }
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Could not load videos.");
     } finally {
       setIsLoading(false);
     }
@@ -42,44 +47,53 @@ export default function AdminVideosPage() {
     formData.append("video", videoFile);
 
     setIsLoading(true);
+    setUploadProgress(0);
     setFeedback("");
 
-    try {
-      const response = await fetch("/api/videos", {
-        method: "POST",
-        body: formData
-      });
-      const result = await response.json();
-
-      if (!response.ok) {
-        setFeedback(result.error || "Upload failed.");
-        return;
-      }
-
-      setVideos((current) => [result, ...current]);
-      setTitle("");
-      setVideoFile(null);
-      setFeedback("Video uploaded successfully.");
-    } catch (error) {
-      setFeedback(error instanceof Error ? error.message : "Upload failed.");
-    } finally {
-      setIsLoading(false);
-    }
+    await new Promise<void>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/api/videos");
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          setUploadProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      };
+      xhr.onload = () => {
+        const result = JSON.parse(xhr.responseText || "{}") as Video & { error?: string };
+        if (xhr.status >= 200 && xhr.status < 300) {
+          setVideos((current) => [result, ...current]);
+          setTitle("");
+          setVideoFile(null);
+          setUploadProgress(100);
+          setFeedback("Video uploaded successfully.");
+        } else {
+          setFeedback(result.error || "Upload failed.");
+        }
+        setIsLoading(false);
+        resolve();
+      };
+      xhr.onerror = () => {
+        setFeedback("A network error occurred while uploading the video.");
+        setIsLoading(false);
+        resolve();
+      };
+      xhr.send(formData);
+    });
   };
 
-  const handleDelete = async (videoId: string) => {
+  const handleDelete = async (video: Video) => {
     if (!window.confirm("Delete this video? This action cannot be undone.")) {
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/videos/${videoId}`, { method: "DELETE" });
+      const response = await fetch(`/api/videos/${encodeURIComponent(video.publicId || video.id)}`, { method: "DELETE" });
       if (response.ok) {
-        setVideos((current) => current.filter((video) => video.id !== videoId));
+        setVideos((current) => current.filter((entry) => entry.publicId !== video.publicId));
         setFeedback("Video deleted.");
       } else {
-        const result = await response.json();
+        const result = await response.json().catch(() => ({}));
         setFeedback(result.error || "Could not delete video.");
       }
     } catch (error) {
@@ -121,10 +135,15 @@ export default function AdminVideosPage() {
                 </label>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button onClick={handleUpload} disabled={isLoading}>
-                    Upload video
+                    {isLoading && uploadProgress > 0 ? `Uploading ${uploadProgress}%` : "Upload video"}
                   </Button>
                   <p className="text-sm text-black/60">Maximum file size: 250 MB.</p>
                 </div>
+                {isLoading && uploadProgress > 0 ? (
+                  <div className="h-2 overflow-hidden rounded-full bg-black/10">
+                    <div className="h-full rounded-full bg-berry-500 transition-all" style={{ width: `${uploadProgress}%` }} />
+                  </div>
+                ) : null}
                 {feedback ? <p className="text-sm text-ink">{feedback}</p> : null}
               </div>
             </div>
@@ -152,7 +171,7 @@ export default function AdminVideosPage() {
                           <p className="mt-1 text-sm text-black/60">Uploaded {formatDate(video.createdAt)}</p>
                         </div>
                         <button
-                          onClick={() => void handleDelete(video.id)}
+                          onClick={() => void handleDelete(video)}
                           className={buttonStyles("secondary", "text-rose-600")}
                           disabled={isLoading}
                         >
@@ -161,7 +180,7 @@ export default function AdminVideosPage() {
                       </div>
                       <div className="mt-4 overflow-hidden rounded-[20px] bg-black">
                         <video controls className="w-full rounded-[20px] bg-black">
-                          <source src={video.videoUrl} type="video/mp4" />
+                          <source src={video.videoUrl} type={`video/${video.format || "mp4"}`} />
                           Your browser does not support the video tag.
                         </video>
                       </div>
