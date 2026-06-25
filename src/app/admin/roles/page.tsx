@@ -13,43 +13,44 @@ import type { Role, RoleKey } from "@/types/user";
 /* ─────────────────────────────────────────────
    PERMISSION → DISPLAY MAP
    Maps technical permission keys to:
-   - A human-readable label shown in the UI
+   - A human-readable, executive-friendly label
    - The module group it belongs to
-   - A short action verb for chip display
+   - A short action verb for visual classification
 ───────────────────────────────────────────── */
 const PERMISSION_DISPLAY: Record<
   Permission,
-  { label: string; action: string; groupKey: string }
+  { label: string; action: string; groupKey: string; description?: string }
 > = {
-  "dashboard.view":        { label: "View Dashboard",             action: "View",    groupKey: "dashboard" },
-  "products.view":         { label: "Browse Products",            action: "View",    groupKey: "products" },
-  "products.create":       { label: "Add New Products",           action: "Create",  groupKey: "products" },
-  "products.edit":         { label: "Edit Product Details",       action: "Edit",    groupKey: "products" },
-  "products.delete":       { label: "Remove Products",            action: "Delete",  groupKey: "products" },
-  "categories.view":       { label: "Browse Categories",          action: "View",    groupKey: "categories" },
-  "categories.create":     { label: "Create Categories",          action: "Create",  groupKey: "categories" },
-  "categories.edit":       { label: "Edit Categories",            action: "Edit",    groupKey: "categories" },
-  "categories.delete":     { label: "Remove Categories",          action: "Delete",  groupKey: "categories" },
-  "orders.view":           { label: "View Orders",                action: "View",    groupKey: "orders" },
-  "orders.update":         { label: "Process & Update Orders",    action: "Manage",  groupKey: "orders" },
-  "payments.view":         { label: "View Payments",              action: "View",    groupKey: "payments" },
-  "payments.verify":       { label: "Approve Payments",           action: "Approve", groupKey: "payments" },
-  "inventory.view":        { label: "View Stock Levels",          action: "View",    groupKey: "inventory" },
-  "inventory.stock_in":    { label: "Receive & Add Stock",        action: "Create",  groupKey: "inventory" },
-  "inventory.stock_out":   { label: "Dispatch & Adjust Stock",    action: "Edit",    groupKey: "inventory" },
-  "customers.view":        { label: "View Customer Profiles",     action: "View",    groupKey: "customers" },
-  "reports.view":          { label: "Access Business Reports",    action: "View",    groupKey: "reports" },
-  "promotions.manage":     { label: "Manage Campaigns & Offers",  action: "Manage",  groupKey: "promotions" },
-  "reviews.manage":        { label: "Moderate Customer Reviews",  action: "Manage",  groupKey: "reviews" },
-  "users.manage":          { label: "Manage Team Members",        action: "Manage",  groupKey: "users" },
-  "roles.manage":          { label: "Configure Access Roles",     action: "Manage",  groupKey: "roles" },
-  "settings.manage":       { label: "Manage System Settings",     action: "Manage",  groupKey: "settings" },
-  "email_templates.manage":{ label: "Manage Email Templates",     action: "Manage",  groupKey: "email-templates" },
+  "dashboard.view":        { label: "Access Control Center",        action: "View",    groupKey: "dashboard", description: "View the main operations dashboard" },
+  "products.view":         { label: "View Catalogue",               action: "View",    groupKey: "products", description: "Browse all collection items" },
+  "products.create":       { label: "Add to Catalogue",             action: "Create",  groupKey: "products", description: "Create new product listings" },
+  "products.edit":         { label: "Update Product Details",       action: "Edit",    groupKey: "products", description: "Modify product information" },
+  "products.delete":       { label: "Archive from Catalogue",       action: "Delete",  groupKey: "products", description: "Remove products from inventory" },
+  "categories.view":       { label: "View Collections",             action: "View",    groupKey: "categories", description: "Access product categories" },
+  "categories.create":     { label: "Create Collections",           action: "Create",  groupKey: "categories", description: "Add new product categories" },
+  "categories.edit":       { label: "Manage Collections",           action: "Edit",    groupKey: "categories", description: "Edit category information" },
+  "categories.delete":     { label: "Archive Collections",          action: "Delete",  groupKey: "categories", description: "Remove product categories" },
+  "orders.view":           { label: "View Orders",                  action: "View",    groupKey: "orders", description: "Access customer orders" },
+  "orders.update":         { label: "Process Orders",               action: "Manage",  groupKey: "orders", description: "Update order status and details" },
+  "payments.view":         { label: "View Transactions",            action: "View",    groupKey: "payments", description: "Review payment records" },
+  "payments.verify":       { label: "Authorize Payments",           action: "Approve", groupKey: "payments", description: "Approve and verify transactions" },
+  "inventory.view":        { label: "View Stock Levels",            action: "View",    groupKey: "inventory", description: "Check inventory availability" },
+  "inventory.stock_in":    { label: "Receive Shipments",            action: "Create",  groupKey: "inventory", description: "Record incoming inventory" },
+  "inventory.stock_out":   { label: "Manage Stock Allocation",      action: "Edit",    groupKey: "inventory", description: "Adjust outgoing inventory" },
+  "customers.view":        { label: "View Customer Profiles",       action: "View",    groupKey: "customers", description: "Access customer information" },
+  "reports.view":          { label: "Access Business Analytics",    action: "View",    groupKey: "reports", description: "View performance reports" },
+  "promotions.manage":     { label: "Manage Campaigns",             action: "Manage",  groupKey: "promotions", description: "Create and modify promotions" },
+  "reviews.manage":        { label: "Moderate Feedback",            action: "Manage",  groupKey: "reviews", description: "Review and manage customer feedback" },
+  "users.manage":          { label: "Manage Team Access",           action: "Manage",  groupKey: "users", description: "Administer team member accounts" },
+  "roles.manage":          { label: "Configure Access Control",     action: "Manage",  groupKey: "roles", description: "Create and modify access roles" },
+  "settings.manage":       { label: "Manage Platform Settings",     action: "Manage",  groupKey: "settings", description: "Configure system preferences" },
+  "email_templates.manage":{ label: "Manage Communications",        action: "Manage",  groupKey: "email-templates", description: "Edit email templates and messaging" },
 };
 
 /* ─────────────────────────────────────────────
    MODULE GROUP DISPLAY CONFIG
-   Maps groupKey to label, icon, and description
+   Maps groupKey to business-friendly label, 
+   description, elegant icon, and color palette
 ───────────────────────────────────────────── */
 interface ModuleGroupConfig {
   label: string;
@@ -60,31 +61,31 @@ interface ModuleGroupConfig {
 }
 
 const MODULE_GROUPS: Record<string, ModuleGroupConfig> = {
-  dashboard:        { label: "Overview & Dashboard",     description: "Access to the main control panel",     icon: "◈",  accentClass: "text-[#b0894e]",         iconBgClass: "bg-[#fdf3e3]" },
-  products:         { label: "Product Management",       description: "Catalogue, listings & product details", icon: "◎",  accentClass: "text-[#8c5fa8]",         iconBgClass: "bg-[#f5eff9]" },
-  categories:       { label: "Category Structure",       description: "Collection taxonomy & organisation",    icon: "⊞",  accentClass: "text-[#5b7fab]",         iconBgClass: "bg-[#edf3f9]" },
-  orders:           { label: "Order Management",         description: "Fulfilment, dispatch & order flow",     icon: "◻",  accentClass: "text-[#5fa888]",         iconBgClass: "bg-[#ebf7f2]" },
-  payments:         { label: "Payment Management",       description: "Transaction review & approval",          icon: "◇",  accentClass: "text-[#c0785a]",         iconBgClass: "bg-[#fdf0eb]" },
-  inventory:        { label: "Inventory Control",        description: "Stock levels, receipts & adjustments",  icon: "▣",  accentClass: "text-[#7a8c5a]",         iconBgClass: "bg-[#f1f5ea]" },
-  customers:        { label: "Customer Management",      description: "Client profiles & account overview",    icon: "◑",  accentClass: "text-[#d4728f]",         iconBgClass: "bg-[#fdf0f4]" },
-  reports:          { label: "Reports & Analytics",      description: "Business intelligence & insights",      icon: "◐",  accentClass: "text-[#5a7ab0]",         iconBgClass: "bg-[#edf3fc]" },
-  promotions:       { label: "Promotions & Marketing",   description: "Campaigns, discounts & brand offers",   icon: "◈",  accentClass: "text-[#c47a3c]",         iconBgClass: "bg-[#fdf4e8]" },
-  reviews:          { label: "Customer Feedback",        description: "Reviews, ratings & moderation",         icon: "◉",  accentClass: "text-[#a87a5b]",         iconBgClass: "bg-[#f8f0ea]" },
-  users:            { label: "User Administration",      description: "Team members, roles & staff accounts",  icon: "◑",  accentClass: "text-[#6a7ab0]",         iconBgClass: "bg-[#edf0fb]" },
-  roles:            { label: "Access Control",           description: "Roles, permissions & security",         icon: "⊕",  accentClass: "text-[#b85c7a]",         iconBgClass: "bg-[#fcedf3]" },
-  settings:         { label: "System Settings",          description: "Platform configuration & preferences",  icon: "◎",  accentClass: "text-[#6e6e6e]",         iconBgClass: "bg-[#f2f2f2]" },
-  "email-templates":{ label: "Email Communications",     description: "Branded email templates & messaging",   icon: "◻",  accentClass: "text-[#5a8ea8]",         iconBgClass: "bg-[#eaf4f8]" },
+  dashboard:        { label: "Dashboard & Analytics",     description: "Central command center for operations",            icon: "⊙",  accentClass: "text-[#9d7d6a]",         iconBgClass: "bg-[#f7f1ed]" },
+  products:         { label: "Product Management",        description: "Catalogue, inventory & listings",                 icon: "◆",  accentClass: "text-[#9d6e9d]",         iconBgClass: "bg-[#f9f4f9]" },
+  categories:       { label: "Category & Collections",    description: "Organization & product grouping",                 icon: "⊡",  accentClass: "text-[#6b7fa8]",         iconBgClass: "bg-[#f0f4f9]" },
+  orders:           { label: "Order Management",          description: "Fulfillment, processing & tracking",              icon: "⊞",  accentClass: "text-[#6b9d7a]",         iconBgClass: "bg-[#f1f8f4]" },
+  payments:         { label: "Payment & Transactions",    description: "Revenue, refunds & financial oversight",           icon: "◈",  accentClass: "text-[#b08a6e]",         iconBgClass: "bg-[#f9f3ed]" },
+  inventory:        { label: "Inventory & Warehouse",     description: "Stock management & allocation",                   icon: "⊕",  accentClass: "text-[#7a9d6b]",         iconBgClass: "bg-[#f3f8f0]" },
+  customers:        { label: "Customer Relationships",    description: "Profiles, preferences & engagement",              icon: "◉",  accentClass: "text-[#c98a9e]",         iconBgClass: "bg-[#faf3f6]" },
+  reports:          { label: "Reports & Insights",        description: "Business intelligence & data analysis",           icon: "◐",  accentClass: "text-[#6b8fa8]",         iconBgClass: "bg-[#f0f5f9]" },
+  promotions:       { label: "Marketing & Promotions",    description: "Campaigns, offers & brand visibility",             icon: "★",  accentClass: "text-[#c49457]",         iconBgClass: "bg-[#f9f5f0]" },
+  reviews:          { label: "Reviews & Feedback",        description: "Quality assurance & customer insights",            icon: "◑",  accentClass: "text-[#a88076]",         iconBgClass: "bg-[#f8f2ed]" },
+  users:            { label: "Team Administration",       description: "User accounts, roles & access",                   icon: "◎",  accentClass: "text-[#717aa8]",         iconBgClass: "bg-[#f1f3f9]" },
+  roles:            { label: "Access Control",            description: "Permissions, roles & security policies",          icon: "⚙",  accentClass: "text-[#b07a92]",         iconBgClass: "bg-[#faf2f6]" },
+  settings:         { label: "System Configuration",      description: "Platform settings & preferences",                 icon: "◇",  accentClass: "text-[#7a7a8a]",         iconBgClass: "bg-[#f4f4f6]" },
+  "email-templates":{ label: "Customer Communications",   description: "Email templates & messaging templates",           icon: "✉",  accentClass: "text-[#6b94a8]",         iconBgClass: "bg-[#f0f6f9]" },
 };
 
 /* ─────────────────────────────────────────────
-   ROLE KEY → Friendly label map
+   ROLE KEY → Executive-Friendly Label Map
 ───────────────────────────────────────────── */
 const ROLE_KEY_LABELS: Record<RoleKey, string> = {
-  "super-admin":       "Executive Administrator",
-  "admin":             "Operations Administrator",
-  "order-staff":       "Order & Fulfilment Staff",
-  "inventory-staff":   "Inventory & Warehouse Staff",
-  "marketing-staff":   "Marketing & Promotions Staff",
+  "super-admin":       "Chief Administrator",
+  "admin":             "General Administrator",
+  "order-staff":       "Order & Fulfillment Specialist",
+  "inventory-staff":   "Warehouse & Inventory Manager",
+  "marketing-staff":   "Marketing & Brand Manager",
 };
 
 /* ─────────────────────────────────────────────
@@ -133,7 +134,8 @@ const ACTION_COLORS: Record<string, string> = {
 };
 
 /* ─────────────────────────────────────────────
-   ELEGANT TOGGLE CHECKBOX
+   ELEGANT PERMISSION TOGGLE
+   Premium toggle switch with luxury styling
 ───────────────────────────────────────────── */
 function PermissionToggle({
   permission,
@@ -156,45 +158,47 @@ function PermissionToggle({
       onClick={() => !disabled && onChange(!checked)}
       disabled={disabled}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[14px] px-3.5 py-2.5 text-left transition-all duration-200",
+        "group flex w-full items-center gap-3 rounded-[16px] px-4 py-3 text-left transition-all duration-200",
         checked
-          ? "bg-[#171212] text-white shadow-sm"
-          : "bg-white/60 text-[#5a4d4d] hover:bg-white hover:shadow-sm",
-        disabled && "cursor-not-allowed opacity-50"
+          ? "bg-gradient-to-br from-[#faf6f2] to-[#f5f0ed] shadow-[0_4px_16px_rgba(23,18,18,0.06)]"
+          : "bg-white hover:bg-[#fdfaf8] shadow-[0_1px_4px_rgba(0,0,0,0.02)]",
+        disabled && "cursor-not-allowed opacity-40"
       )}
     >
-      {/* Custom checkbox indicator */}
+      {/* Elegant toggle switch */}
       <span
         className={cn(
-          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all duration-200",
+          "relative flex h-6 w-10 shrink-0 rounded-full transition-all duration-300",
           checked
-            ? "border-transparent bg-[#f34078] shadow-[0_0_0_3px_rgba(243,64,120,0.15)]"
-            : "border-black/20 bg-white group-hover:border-[#f34078]/40"
+            ? "bg-[#9d7d6a] shadow-inset"
+            : "bg-[#e8dfd8] border border-black/5"
         )}
       >
-        {checked && (
-          <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-            <path
-              d="M1 4L3.5 6.5L9 1"
-              stroke="white"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+        <span
+          className={cn(
+            "absolute h-5 w-5 rounded-full bg-white shadow-[0_2px_8px_rgba(23,18,18,0.15)] transition-all duration-300",
+            checked ? "translate-x-[1.1rem] top-0.5" : "translate-x-0.5 top-0.5"
+          )}
+        />
+      </span>
+
+      {/* Label container */}
+      <div className="flex-1 min-w-0">
+        <p className={cn("text-sm font-semibold leading-tight", checked ? "text-[#3d3d50]" : "text-[#5a4d4d]")}>
+          {display.label}
+        </p>
+        {display.description && (
+          <p className="mt-0.5 text-xs text-black/35 truncate">
+            {display.description}
+          </p>
         )}
-      </span>
+      </div>
 
-      {/* Label */}
-      <span className={cn("flex-1 text-sm font-medium leading-tight", checked ? "text-white" : "")}>
-        {display.label}
-      </span>
-
-      {/* Action chip */}
+      {/* Action badge */}
       <span
         className={cn(
-          "shrink-0 rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ring-1",
-          checked ? "bg-white/15 text-white ring-white/25" : actionColor
+          "shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.1em] ring-1",
+          actionColor
         )}
       >
         {display.action}
@@ -205,6 +209,7 @@ function PermissionToggle({
 
 /* ─────────────────────────────────────────────
    PERMISSION GROUP CARD
+   Luxury module grouping with elegant styling
 ───────────────────────────────────────────── */
 function PermissionGroupCard({
   groupKey,
@@ -233,43 +238,54 @@ function PermissionGroupCard({
   };
 
   return (
-    <div className="overflow-hidden rounded-[22px] border border-black/[0.06] bg-[#fdfaf8] shadow-[0_2px_12px_rgba(23,18,18,0.04)]">
-      {/* Group header */}
-      <div className="flex items-center gap-3 border-b border-black/[0.06] px-5 py-4">
-        <div className={cn("flex h-9 w-9 items-center justify-center rounded-[12px] text-lg", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
+    <div className="group overflow-hidden rounded-[20px] border border-black/[0.08] bg-gradient-to-br from-white to-[#fdfaf8] shadow-[0_2px_8px_rgba(23,18,18,0.03)] transition-all duration-300 hover:shadow-[0_4px_16px_rgba(23,18,18,0.06)]">
+      {/* Group header with icon and title */}
+      <div className="flex items-start gap-4 border-b border-black/[0.05] px-5 py-4 bg-gradient-to-r from-white to-[#faf6f2]">
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] text-xl transition-all duration-300", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
           <span className={config?.accentClass ?? "text-black/40"}>{config?.icon ?? "◎"}</span>
         </div>
         <div className="flex-1 min-w-0">
           <p className={cn("text-sm font-semibold leading-tight", config?.accentClass ?? "text-black/70")}>
             {config?.label ?? groupKey}
           </p>
-          <p className="mt-0.5 truncate text-xs text-black/45">{config?.description}</p>
+          <p className="mt-1 text-xs text-black/40">{config?.description}</p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <span className="text-xs text-black/40">
-            {enabledCount}/{permissions.length}
-          </span>
-          <button
-            type="button"
-            onClick={handleSelectAll}
-            disabled={disabled}
-            className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold transition-all duration-150",
-              allSelected
-                ? "bg-[#f34078]/10 text-[#f34078] hover:bg-[#f34078]/20"
-                : someSelected
-                  ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                  : "bg-black/5 text-black/50 hover:bg-black/10",
-              disabled && "cursor-not-allowed opacity-40"
-            )}
-          >
-            {allSelected ? "Deselect All" : "Select All"}
-          </button>
+        <div className="flex shrink-0 items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className={cn("text-xs font-semibold", enabledCount > 0 ? config?.accentClass ?? "text-black/70" : "text-black/30")}>
+              {enabledCount}
+            </span>
+            <span className="text-xs text-black/30">/</span>
+            <span className="text-xs text-black/30">{permissions.length}</span>
+          </div>
         </div>
       </div>
 
+      {/* Quick actions */}
+      <div className="flex items-center gap-2 border-b border-black/[0.05] px-5 py-2.5 bg-[#fdfaf8] transition-colors duration-300">
+        <button
+          type="button"
+          onClick={handleSelectAll}
+          disabled={disabled}
+          className={cn(
+            "flex-1 rounded-[10px] px-2 py-1.5 text-xs font-semibold uppercase tracking-[0.08em] transition-all duration-150",
+            allSelected
+              ? "bg-[#9d7d6a]/10 text-[#9d7d6a]"
+              : someSelected
+                ? "bg-amber-50 text-amber-700"
+                : "bg-black/5 text-black/50 hover:bg-black/8",
+            disabled && "cursor-not-allowed opacity-40"
+          )}
+        >
+          {allSelected ? "Clear All" : "Select All"}
+        </button>
+        <span className="text-xs text-black/30 px-1">
+          {enabledCount > 0 ? `${enabledCount} selected` : "None selected"}
+        </span>
+      </div>
+
       {/* Permissions list */}
-      <div className="grid gap-1.5 p-3">
+      <div className="grid gap-1 p-3">
         {permissions.map((perm) => (
           <PermissionToggle
             key={perm}
@@ -285,7 +301,8 @@ function PermissionGroupCard({
 }
 
 /* ─────────────────────────────────────────────
-   ROLE CARD (right panel — display only)
+   ROLE CARD (Right Panel)
+   Display role details with elegant permission grouping
 ───────────────────────────────────────────── */
 function RoleCard({
   role,
@@ -297,37 +314,47 @@ function RoleCard({
   canEdit: boolean;
 }) {
   const groups = buildPermissionGroups(role.permissions);
+  const uniqueGroupCount = groups.length;
 
   return (
-    <div className="overflow-hidden rounded-[28px] bg-white shadow-soft ring-1 ring-black/[0.06]">
-      {/* Card header */}
-      <div className="flex items-start justify-between gap-4 border-b border-black/[0.05] px-6 py-5">
-        <div>
-          <p className="font-display text-lg text-ink">{role.name}</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-black/55">{role.description}</p>
+    <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_4px_16px_rgba(23,18,18,0.06)] ring-1 ring-black/[0.05] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(23,18,18,0.08)]">
+      {/* Card header with role title */}
+      <div className="border-b border-black/[0.05] px-6 py-5 bg-gradient-to-r from-[#fdfaf8] to-white">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-black/40">Access Role</p>
+            <h3 className="mt-2 text-lg font-semibold text-[#3d3d50]">{role.name}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-black/50">{role.description}</p>
+          </div>
+          {canEdit && (
+            <button
+              onClick={onEdit}
+              className="shrink-0 inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] bg-[#9d7d6a] text-white transition-all duration-200 hover:bg-[#8a6d5c] shadow-[0_2px_8px_rgba(157,125,106,0.25)]"
+            >
+              Edit
+            </button>
+          )}
         </div>
-        {canEdit && (
-          <Button variant="secondary" onClick={onEdit} className="shrink-0 !rounded-full !py-2 !text-xs">
-            Edit Role
-          </Button>
-        )}
       </div>
 
-      {/* Permission groups as elegant chips */}
-      <div className="space-y-5 px-6 py-5">
+      {/* Permission groups display */}
+      <div className="space-y-4 px-6 py-5">
         {groups.map(({ groupKey, permissions }) => {
           const config = MODULE_GROUPS[groupKey];
           return (
-            <div key={groupKey}>
+            <div key={groupKey} className="border-l-2 pl-3.5" style={{ borderColor: config?.accentClass?.split('[#')[1]?.slice(0, -1) ? `#${config?.accentClass?.split('[#')[1]?.slice(0, -1)}` : 'transparent' }}>
               <div className="flex items-center gap-2 mb-2.5">
-                <span className={cn("flex h-6 w-6 items-center justify-center rounded-[8px] text-[11px]", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
+                <span className={cn("flex h-7 w-7 items-center justify-center rounded-[8px] text-sm", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
                   <span className={config?.accentClass ?? "text-black/40"}>{config?.icon}</span>
                 </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-black/40">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/50">
                   {config?.label ?? groupKey}
                 </p>
+                <span className="ml-auto text-xs font-medium text-black/30">
+                  {permissions.length} {permissions.length === 1 ? 'privilege' : 'privileges'}
+                </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-wrap gap-1.5 ml-0.5">
                 {permissions.map((perm) => {
                   const display = PERMISSION_DISPLAY[perm];
                   if (!display) return null;
@@ -336,12 +363,13 @@ function RoleCard({
                     <span
                       key={perm}
                       className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1",
+                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1",
                         color
                       )}
+                      title={display.description || display.label}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-60" />
-                      {display.label}
+                      <span className="h-1 w-1 rounded-full bg-current opacity-70" />
+                      <span className="max-w-[150px] truncate">{display.label}</span>
                     </span>
                   );
                 })}
@@ -349,9 +377,16 @@ function RoleCard({
             </div>
           );
         })}
-        <p className="text-[11px] uppercase tracking-[0.2em] text-black/30">
-          {role.permissions.length} access privileges assigned
-        </p>
+        
+        {/* Stats footer */}
+        <div className="pt-3 mt-3 border-t border-black/[0.05]">
+          <div className="flex items-center justify-between text-xs">
+            <p className="text-black/40">
+              <span className="font-semibold text-black/60">{uniqueGroupCount}</span> modules • 
+              <span className="font-semibold text-black/60 ml-1">{role.permissions.length}</span> privileges
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -471,21 +506,21 @@ export default function AdminRolesPage() {
 
   return (
     <AdminPage
-      eyebrow="Access Control"
-      title="Roles & Permissions"
-      description="Define role-based access to each area of your platform. Assign curated privileges to each team role to maintain clear operational boundaries."
+      eyebrow="Operations"
+      title="Access Control & Roles"
+      description="Define precise role-based access privileges for your team. Create custom roles with curated access to each operational area, ensuring clear security boundaries and operational efficiency."
     >
       <PermissionGuard
         permission="roles.manage"
         fallback={
-          <div className="flex items-center gap-4 rounded-[28px] border border-black/5 bg-white/80 p-6 shadow-soft">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fcedf3] text-lg text-[#b85c7a]">
-              ⊕
+          <div className="flex items-center gap-4 rounded-[22px] border border-black/[0.08] bg-gradient-to-r from-[#faf6f2] to-white p-6 shadow-[0_2px_8px_rgba(23,18,18,0.04)]">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f9f4f9] text-xl text-[#9d6e9d]">
+              ⚙
             </div>
             <div>
-              <p className="font-semibold text-ink">Access Restricted</p>
-              <p className="mt-1 text-sm text-black/55">
-                Only authorised administrators may configure roles and access privileges.
+              <p className="font-semibold text-[#3d3d50]">Access Restricted</p>
+              <p className="mt-1 text-sm text-black/50">
+                Only authorized administrators may configure access roles and privileges.
               </p>
             </div>
           </div>
@@ -495,36 +530,38 @@ export default function AdminRolesPage() {
           {/* ── Left Panel: Role Builder ── */}
           <div className="space-y-0">
             {/* Form card */}
-            <div className="rounded-[28px] bg-white shadow-soft ring-1 ring-black/[0.06]">
+            <div className="rounded-[24px] bg-white shadow-[0_4px_16px_rgba(23,18,18,0.06)] ring-1 ring-black/[0.05] overflow-hidden">
               {/* Header */}
-              <div className="flex items-center justify-between gap-4 border-b border-black/[0.05] px-6 py-5">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#d9225d]">
-                    {formState.id ? "Editing Role" : "New Role"}
-                  </p>
-                  <h2 className="mt-1 font-display text-xl text-ink">
-                    {formState.id ? "Modify Access Role" : "Create Access Role"}
-                  </h2>
+              <div className="border-b border-black/[0.05] px-6 py-5 bg-gradient-to-r from-[#fdfaf8] to-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">
+                      {formState.id ? "Editing" : "Create New"}
+                    </p>
+                    <h2 className="mt-2 text-lg font-semibold text-[#3d3d50]">
+                      {formState.id ? "Access Role" : "Create Role"}
+                    </h2>
+                  </div>
+                  {formState.id && (
+                    <button
+                      type="button"
+                      onClick={() => { setFormState(initialFormState); setFeedback(null); }}
+                      className="rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.1em] bg-black/5 text-black/50 hover:bg-black/10 transition-all duration-150"
+                    >
+                      Cancel
+                    </button>
+                  )}
                 </div>
-                {formState.id && (
-                  <Button
-                    variant="secondary"
-                    onClick={() => { setFormState(initialFormState); setFeedback(null); }}
-                    className="!rounded-full !py-2 !text-xs"
-                  >
-                    Discard
-                  </Button>
-                )}
               </div>
 
-              {/* Basic fields */}
+              {/* Form fields */}
               <div className="space-y-5 px-6 py-5">
-                {/* Role type */}
+                {/* Role type selection */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-black/50">
-                    Role Type
+                  <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2.5">
+                    Role Category
                   </label>
-                  <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {editableRoleKeys.map((roleKey) => (
                       <button
                         key={roleKey}
@@ -533,10 +570,10 @@ export default function AdminRolesPage() {
                           setFormState((current) => ({ ...current, key: roleKey }))
                         }
                         className={cn(
-                          "rounded-[14px] border px-4 py-2.5 text-left text-sm font-medium transition-all duration-150",
+                          "rounded-[14px] border-2 px-3.5 py-2.5 text-left text-xs font-semibold transition-all duration-150",
                           formState.key === roleKey
-                            ? "border-[#f34078]/40 bg-[#fff4f7] text-[#b61649] shadow-sm"
-                            : "border-black/8 bg-[#fdfaf8] text-black/55 hover:border-black/15 hover:bg-white"
+                            ? "border-[#9d7d6a] bg-[#f7f1ed] text-[#6a5d54] shadow-[0_2px_8px_rgba(157,125,106,0.15)]"
+                            : "border-black/8 bg-[#fdfaf8] text-black/55 hover:border-[#9d7d6a]/30 hover:bg-white"
                         )}
                       >
                         {ROLE_KEY_LABELS[roleKey]}
@@ -547,7 +584,7 @@ export default function AdminRolesPage() {
 
                 {/* Role name */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-black/50">
+                  <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
                     Role Name
                   </label>
                   <input
@@ -556,13 +593,13 @@ export default function AdminRolesPage() {
                       setFormState((current) => ({ ...current, name: e.target.value }))
                     }
                     placeholder="e.g. Senior Operations Manager"
-                    className="mt-2 w-full rounded-[16px] border border-black/10 bg-[#fdfaf8] px-4 py-3 text-sm text-ink placeholder:text-black/30 focus:border-[#f34078]/40 focus:bg-white focus:shadow-sm focus:ring-0 transition-all duration-150"
+                    className="w-full rounded-[14px] border border-black/10 bg-[#fdfaf8] px-4 py-2.5 text-sm text-[#3d3d50] placeholder:text-black/30 focus:border-[#9d7d6a]/40 focus:bg-white focus:shadow-[0_2px_8px_rgba(157,125,106,0.1)] focus:ring-0 transition-all duration-150"
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-xs font-semibold uppercase tracking-[0.14em] text-black/50">
+                  <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
                     Role Description
                   </label>
                   <textarea
@@ -570,34 +607,35 @@ export default function AdminRolesPage() {
                     onChange={(e) =>
                       setFormState((current) => ({ ...current, description: e.target.value }))
                     }
-                    placeholder="Describe the responsibilities of this role…"
+                    placeholder="Describe the responsibilities and scope of this role…"
                     rows={3}
-                    className="mt-2 w-full rounded-[16px] border border-black/10 bg-[#fdfaf8] px-4 py-3 text-sm text-ink placeholder:text-black/30 focus:border-[#f34078]/40 focus:bg-white focus:shadow-sm focus:ring-0 transition-all duration-150"
+                    className="w-full rounded-[14px] border border-black/10 bg-[#fdfaf8] px-4 py-2.5 text-sm text-[#3d3d50] placeholder:text-black/30 focus:border-[#9d7d6a]/40 focus:bg-white focus:shadow-[0_2px_8px_rgba(157,125,106,0.1)] focus:ring-0 transition-all duration-150 resize-none"
                   />
                 </div>
               </div>
 
               {/* Divider with label */}
-              <div className="flex items-center gap-3 px-6 pb-4">
-                <div className="h-px flex-1 bg-black/[0.06]" />
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-black/35">
+              <div className="flex items-center gap-3 px-6 py-3 bg-[#fdfaf8]">
+                <div className="h-px flex-1 bg-black/[0.08]" />
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">
                   Access Privileges
                 </p>
-                <div className="h-px flex-1 bg-black/[0.06]" />
+                <div className="h-px flex-1 bg-black/[0.08]" />
               </div>
 
-              {/* Summary badge */}
-              <div className="mx-6 mb-4 flex items-center justify-between rounded-[14px] bg-[#fdfaf8] px-4 py-3">
-                <p className="text-xs text-black/50">
-                  Privileges selected
+              {/* Privileges counter */}
+              <div className="mx-6 mt-4 flex items-center justify-between rounded-[14px] bg-gradient-to-r from-[#f7f1ed] to-[#fdfaf8] px-4 py-3 ring-1 ring-black/[0.05]">
+                <p className="text-xs font-semibold text-black/50">
+                  Privileges assigned
                 </p>
-                <span className="rounded-full bg-[#f34078] px-3 py-0.5 text-xs font-semibold text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#9d7d6a] text-white px-3 py-0.5 text-xs font-bold">
+                  <span className="text-sm">•</span>
                   {formState.permissions.length} of {allPermissions.length}
                 </span>
               </div>
 
               {/* Permission groups */}
-              <div className="space-y-3 px-6 pb-6">
+              <div className="space-y-2.5 px-6 py-5 pb-6">
                 {formPermissionGroups.map(({ groupKey, permissions: groupPerms }) => (
                   <PermissionGroupCard
                     key={groupKey}
@@ -610,46 +648,46 @@ export default function AdminRolesPage() {
                 ))}
               </div>
 
-              {/* Feedback */}
+              {/* Feedback messages */}
               {feedback && (
                 <div
                   className={cn(
-                    "mx-6 mb-4 flex items-center gap-3 rounded-[16px] px-4 py-3 text-sm",
+                    "mx-6 mb-4 flex items-center gap-3 rounded-[14px] px-4 py-3 text-xs font-medium transition-all duration-300",
                     feedback.type === "success"
                       ? "bg-[#ebf7f2] text-[#2d7a57]"
                       : "bg-[#fdf0f0] text-[#b04040]"
                   )}
                 >
-                  <span>{feedback.type === "success" ? "✓" : "!"}</span>
+                  <span className="text-sm">{feedback.type === "success" ? "✓" : "⚠"}</span>
                   <span>{feedback.message}</span>
                 </div>
               )}
 
-              {/* Actions */}
-              <div className="flex gap-3 border-t border-black/[0.05] px-6 py-5">
-                <Button
+              {/* Action buttons */}
+              <div className="flex gap-3 border-t border-black/[0.05] px-6 py-4 bg-[#fdfaf8]">
+                <button
                   onClick={() => void saveRole()}
                   disabled={!canManageRoles}
-                  className="flex-1"
+                  className={cn(
+                    "flex-1 rounded-[12px] px-4 py-2.5 text-sm font-semibold uppercase tracking-[0.1em] transition-all duration-200",
+                    canManageRoles
+                      ? "bg-[#9d7d6a] text-white shadow-[0_2px_8px_rgba(157,125,106,0.25)] hover:bg-[#8a6d5c] hover:shadow-[0_4px_12px_rgba(157,125,106,0.35)]"
+                      : "bg-black/5 text-black/50 cursor-not-allowed"
+                  )}
                 >
                   {formState.id ? "Save Changes" : "Create Role"}
-                </Button>
-                {!canManageRoles && (
-                  <p className="flex items-center text-xs text-black/40">
-                    Contact your administrator to enable editing.
-                  </p>
-                )}
+                </button>
               </div>
             </div>
           </div>
 
           {/* ── Right Panel: Existing Roles ── */}
-          <div className="space-y-5">
+          <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-black/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/50">
                 Configured Roles
               </p>
-              <span className="rounded-full bg-[#f5eff9] px-2.5 py-0.5 text-xs font-semibold text-[#8c5fa8]">
+              <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-[#f7f1ed] text-[#9d7d6a] text-xs font-bold">
                 {roles.length}
               </span>
             </div>
