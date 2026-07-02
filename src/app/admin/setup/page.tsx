@@ -6,10 +6,7 @@ import { useAdminSession } from "@/components/providers/admin-session-provider";
 import { Button } from "@/components/ui/button";
 
 const initialForm = {
-  fullName: "",
   username: "",
-  email: "",
-  phone: "",
   password: "",
   confirmPassword: ""
 };
@@ -38,9 +35,14 @@ export default function AdminSetupPage() {
           </p>
 
           <form
-            className="mt-8 grid gap-5 md:grid-cols-2"
+            className="mt-8 space-y-5 max-w-md"
             onSubmit={async (event) => {
               event.preventDefault();
+
+              if (!form.username.trim() || !form.password.trim()) {
+                setErrorMessage("Please fill in all fields.");
+                return;
+              }
 
               if (form.password !== form.confirmPassword) {
                 setErrorMessage("Password and confirm password must match.");
@@ -48,11 +50,12 @@ export default function AdminSetupPage() {
               }
 
               setIsSaving(true);
+              const usernameTrimmed = form.username.trim();
               const result = await createInitialAdmin({
-                fullName: form.fullName,
-                username: form.username,
-                email: form.email,
-                phone: form.phone,
+                fullName: usernameTrimmed.charAt(0).toUpperCase() + usernameTrimmed.slice(1),
+                username: usernameTrimmed,
+                email: `${usernameTrimmed.toLowerCase()}@berryclothing.com`,
+                phone: "0000000000",
                 password: form.password
               });
               setIsSaving(false);
@@ -66,67 +69,43 @@ export default function AdminSetupPage() {
               router.push("/admin/login");
             }}
           >
-            <label className="text-sm font-semibold text-ink">
-              Full Name
-              <input
-                value={form.fullName}
-                onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))}
-                className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
-              />
-            </label>
-            <label className="text-sm font-semibold text-ink">
-              Username
+            <div>
+              <label className="text-sm font-semibold text-ink">Username</label>
               <input
                 value={form.username}
                 onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))}
+                placeholder="Enter username"
                 className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
               />
-            </label>
-            <label className="text-sm font-semibold text-ink">
-              Email
-              <input
-                type="email"
-                value={form.email}
-                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
-              />
-            </label>
-            <label className="text-sm font-semibold text-ink">
-              Phone Number
-              <input
-                value={form.phone}
-                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
-              />
-            </label>
-            <label className="text-sm font-semibold text-ink">
-              Password
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-ink">Password</label>
               <input
                 type="password"
                 value={form.password}
                 onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
+                placeholder="Enter password"
                 className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
               />
-            </label>
-            <label className="text-sm font-semibold text-ink">
-              Confirm Password
+            </div>
+            <div>
+              <label className="text-sm font-semibold text-ink">Confirm Password</label>
               <input
                 type="password"
                 value={form.confirmPassword}
                 onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
+                placeholder="Confirm password"
                 className="mt-2 w-full rounded-[20px] border border-black/10 bg-white px-4 py-3 text-sm text-ink"
               />
-            </label>
+            </div>
             {errorMessage ? (
-              <div className="md:col-span-2 rounded-[18px] bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              <div className="rounded-[18px] bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {errorMessage}
               </div>
             ) : null}
-            <div className="md:col-span-2">
-              <Button type="submit" className="w-full rounded-[20px] py-3.5" disabled={isSaving}>
-                {isSaving ? "Creating account..." : "Create Super Admin"}
-              </Button>
-            </div>
+            <Button type="submit" className="w-full rounded-[20px] py-3.5" disabled={isSaving}>
+              {isSaving ? "Creating account..." : "Create Super Admin"}
+            </Button>
           </form>
         </div>
 

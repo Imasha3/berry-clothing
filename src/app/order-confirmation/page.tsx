@@ -12,6 +12,9 @@ interface StoredOrder {
   email: string;
   address: string;
   city: string;
+  subtotal?: number;
+  originalSubtotal?: number;
+  discountTotal?: number;
   deliveryFee: number;
   total: number;
   status: string;
@@ -90,6 +93,8 @@ export default function OrderConfirmationPage() {
 
         <div className="mt-8 rounded-[24px] bg-[#fff5f4] p-5 text-sm text-black/65">
           <p className="font-semibold text-ink">Invoice Summary</p>
+          <p className="mt-2">Subtotal: {formatCurrency(order.originalSubtotal ?? order.subtotal ?? order.total - order.deliveryFee)}</p>
+          <p className="mt-2 text-emerald-700">Discount: -{formatCurrency(order.discountTotal ?? 0)}</p>
           <p className="mt-2">Delivery Fee: {formatCurrency(order.deliveryFee)}</p>
           <p className="mt-2 font-semibold text-ink">Total: {formatCurrency(order.total)}</p>
         </div>

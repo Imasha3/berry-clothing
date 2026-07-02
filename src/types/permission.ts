@@ -39,5 +39,6 @@ export type ModuleKey =
   | "videos"
   | "users"
   | "roles"
+  | "contact-settings"
   | "settings"
   | "email-templates";

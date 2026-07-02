@@ -60,7 +60,7 @@ apiRoute.post(async (req, res) => {
   }
 
   try {
-    const uploadResponse = await uploadVideoToCloudinary(file.path, file.originalname);
+    const uploadResponse = await uploadVideoToCloudinary(file.path, title);
 
     const video = {
       id: uploadResponse.public_id,

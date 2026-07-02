@@ -4,15 +4,29 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { customerAccountLinks } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { useCommerceStore } from "@/components/providers/commerce-store-provider";
+import { useCustomerSession } from "@/components/providers/customer-session-provider";
 
 export function AccountSidebar() {
   const pathname = usePathname();
+  const { orders } = useCommerceStore();
+  const { customer } = useCustomerSession();
+
+  const customerOrders = customer ? orders.filter((order) => order.customerId === customer.id) : [];
+  const hasPurchases = customerOrders.length > 0;
+
+  const filteredLinks = customerAccountLinks.filter((link) => {
+    if (link.href === "/account/payment-history") {
+      return hasPurchases;
+    }
+    return true;
+  });
 
   return (
     <aside className="rounded-[28px] bg-white p-5 shadow-soft ring-1 ring-black/5">
       <p className="font-display text-2xl text-ink">My Account</p>
       <div className="mt-5 space-y-2">
-        {customerAccountLinks.map((link) => (
+        {filteredLinks.map((link) => (
           <Link
             key={link.href}
             href={link.href}

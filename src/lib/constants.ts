@@ -6,7 +6,6 @@ export const siteNavLinks = [
   { href: "/shop", label: "Shop" },
   { href: "/size-guide", label: "Size Guide" },
   { href: "/about", label: "About" },
-  { href: "/faq", label: "Q&A" },
   { href: "/contact", label: "Contact" }
 ];
 
@@ -15,7 +14,6 @@ export const customerAccountLinks = [
   { href: "/account/profile", label: "My Profile" },
   { href: "/account/orders", label: "Orders" },
   { href: "/account/track-order", label: "Track Order" },
-  { href: "/account/payment-methods", label: "Payment Methods" },
   { href: "/account/payment-history", label: "Payment History" },
   { href: "/account/delivery-addresses", label: "Delivery Addresses" },
   { href: "/account/return-requests", label: "Return Requests" },
@@ -60,6 +58,7 @@ export const adminModules: Array<{
   { key: "videos", href: "/admin/videos", label: "Video Management", icon: "▶" },
   { key: "users", href: "/admin/users", label: "Users & Permissions", icon: "◎" },
   { key: "roles", href: "/admin/roles", label: "Roles", icon: "◇" },
+  { key: "contact-settings", href: "/admin/contact-settings", label: "Contact Settings", icon: "@" },
   { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" }
 ];
 

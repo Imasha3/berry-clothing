@@ -7,12 +7,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 export function buttonStyles(variant: ButtonProps["variant"] = "primary", className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200",
+    "inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition duration-200 disabled:pointer-events-none disabled:opacity-55",
     variant === "primary" &&
-      "bg-berry-500 text-white hover:bg-berry-600 focus:outline-none focus:ring-2 focus:ring-berry-200",
-    variant === "secondary" && "bg-white text-ink ring-1 ring-black/10 hover:bg-berry-50",
+      "bg-berry-500 text-white shadow-[0_14px_28px_rgba(243,64,120,0.24)] hover:-translate-y-0.5 hover:bg-berry-600 focus:outline-none focus:ring-2 focus:ring-berry-200",
+    variant === "secondary" && "bg-white text-ink ring-1 ring-black/10 hover:-translate-y-0.5 hover:bg-berry-50",
     variant === "ghost" && "text-ink hover:bg-black/5",
-    variant === "dark" && "bg-ink text-white hover:bg-black/85",
+    variant === "dark" && "bg-ink text-white hover:-translate-y-0.5 hover:bg-black/85",
     className
   );
 }

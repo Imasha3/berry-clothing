@@ -18,10 +18,18 @@ html {
 
 body {
   margin: 0;
+  font-family: var(--font-manrope);
+  font-feature-settings: "ss01" on, "cv01" on;
+  letter-spacing: 0.01em;
   background:
     radial-gradient(circle at top left, rgba(236, 92, 137, 0.18), transparent 32%),
     radial-gradient(circle at top right, rgba(246, 205, 214, 0.3), transparent 28%),
     linear-gradient(180deg, #fffdfa 0%, #fff5f4 54%, #fef5ef 100%);
+  color: #22181b;
+}
+
+::selection {
+  background: rgba(243, 64, 120, 0.2);
   color: #22181b;
 }
 

@@ -55,6 +55,9 @@ export interface OrderItem {
   color: string;
   quantity: number;
   price: number;
+  originalPrice?: number;
+  discountAmount?: number;
+  discountPercentage?: number;
   variantId?: string;
 }
 
@@ -69,6 +72,8 @@ export interface Order {
   notes?: string;
   items: OrderItem[];
   subtotal: number;
+  originalSubtotal?: number;
+  discountTotal?: number;
   deliveryFee: number;
   total: number;
   paymentMethod: PaymentMethod;

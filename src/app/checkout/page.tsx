@@ -45,7 +45,7 @@ function sanitizeStoredOrder(order: Order): Order {
 export default function CheckoutPage() {
   const router = useRouter();
   const { addOrder } = useCommerceStore();
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, originalSubtotal, discountTotal, clearCart } = useCart();
   const { isAuthenticated, customer, isReady } = useCustomerSession();
   const [form, setForm] = useState({
     customerName: customer?.name ?? "",
@@ -247,6 +247,8 @@ export default function CheckoutPage() {
       ...form,
       items,
       subtotal,
+      originalSubtotal,
+      discountTotal,
       deliveryFee,
       total: subtotal + deliveryFee,
       status: "Pending",
@@ -466,7 +468,12 @@ export default function CheckoutPage() {
             {paymentMethod === "Online Card Payment" ? "Pay and Place Order" : "Place Order"}
           </Button>
         </div>
-        <CartSummary subtotal={subtotal} />
+        <CartSummary
+          subtotal={subtotal}
+          originalSubtotal={originalSubtotal}
+          discountTotal={discountTotal}
+          deliveryFee={deliveryFee}
+        />
       </div>
       <AuthRequiredModal open={showAuthRequired} onClose={() => setShowAuthRequired(false)} redirectTo="/checkout" />
     </div>

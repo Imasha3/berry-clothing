@@ -9,10 +9,10 @@ export const DEFAULT_STORE_SETTINGS: StoreSettings = {
   address: "Colombo, Sri Lanka",
   footerText: "Crafted with care for stylish women in Sri Lanka.",
   socialLinks: {
-    facebook: "",
-    instagram: "",
-    tiktok: "",
-    whatsapp: "",
+    facebook: "https://www.facebook.com/share/1HJuZ2v3HU/",
+    instagram: "https://www.instagram.com/",
+    tiktok: "https://www.tiktok.com/",
+    whatsapp: "https://wa.me/94771234567",
     youtube: ""
   },
   bankDetails: {

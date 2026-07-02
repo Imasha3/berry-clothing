@@ -12,7 +12,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils";
 
 export default function CartPage() {
-  const { items, subtotal, removeItem, updateQuantity } = useCart();
+  const { items, subtotal, originalSubtotal, discountTotal, removeItem, updateQuantity } = useCart();
   const { isAuthenticated, isReady } = useCustomerSession();
   const [showAuthRequired, setShowAuthRequired] = useState(false);
 
@@ -43,7 +43,17 @@ export default function CartPage() {
                     {item.size} / {item.color}
                   </p>
                   <p className="mt-2 text-sm text-black/60">SKU: {item.sku}</p>
-                  <p className="mt-2 font-semibold text-ink">{formatCurrency(item.price)}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-berry-700">{formatCurrency(item.price)}</p>
+                    {item.discountAmount > 0 ? (
+                      <p className="text-sm text-black/40 line-through">{formatCurrency(item.originalPrice)}</p>
+                    ) : null}
+                  </div>
+                  {item.discountAmount > 0 ? (
+                    <p className="mt-1 text-xs font-semibold text-emerald-700">
+                      {item.discountPercentage}% OFF. You Save {formatCurrency(item.discountAmount * item.quantity)}
+                    </p>
+                  ) : null}
                 </div>
                 <div className="flex flex-col items-start gap-3">
                   <div className="flex items-center rounded-full border border-black/10">
@@ -72,7 +82,7 @@ export default function CartPage() {
             ))}
           </div>
           <div className="space-y-4">
-            <CartSummary subtotal={subtotal} />
+            <CartSummary subtotal={subtotal} originalSubtotal={originalSubtotal} discountTotal={discountTotal} />
             {isReady && isAuthenticated ? (
               <Link href="/checkout" className={buttonStyles("primary", "w-full")}>
                 Proceed to Checkout

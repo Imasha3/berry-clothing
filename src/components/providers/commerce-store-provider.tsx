@@ -31,6 +31,7 @@ import { mockProducts } from "@/data/mockProducts";
 import { mockRoles, mockUsers } from "@/data/mockUsers";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { firestoreCollections, getFirestoreDb } from "@/lib/firestore";
+import { calculateDiscountedPrice } from "@/lib/product";
 import type { AdminActivityLogEntry, AdminNotification } from "@/types/admin";
 import type { Customer } from "@/types/customer";
 import type { InventoryMovement } from "@/types/inventory";
@@ -186,9 +187,25 @@ function getAvailabilityStatus(stockQuantity: number, minStockLevel: number): Pr
 
 function normalizeProduct(product: Product): Product {
   const stockQuantity = product.variants.reduce((sum, variant) => sum + variant.stockQuantity, 0);
+  const originalPrice = product.originalPrice ?? product.price;
+  const discountPercentage =
+    product.discountPercentage ??
+    (product.discountPrice && product.discountPrice < originalPrice
+      ? Math.round(((originalPrice - product.discountPrice) / originalPrice) * 100)
+      : 0);
+  const isDiscounted = Boolean(product.isDiscounted ?? discountPercentage > 0);
+  const discountedPrice = isDiscounted
+    ? product.discountedPrice ?? product.discountPrice ?? calculateDiscountedPrice(originalPrice, discountPercentage)
+    : undefined;
 
   return {
     ...product,
+    originalPrice,
+    discountPercentage,
+    discountedPrice,
+    discountPrice: discountedPrice,
+    isDiscounted: Boolean(isDiscounted && discountedPrice && discountedPrice < originalPrice),
+    isSaleItem: Boolean(product.isSaleItem || (isDiscounted && discountedPrice && discountedPrice < originalPrice)),
     stockQuantity,
     availabilityStatus: getAvailabilityStatus(stockQuantity, product.minStockLevel)
   };

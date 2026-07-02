@@ -10,7 +10,7 @@ import { useCart } from "@/components/providers/cart-provider";
 import { useCustomerSession } from "@/components/providers/customer-session-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { getProductImageSources, getProductMainImage } from "@/lib/product";
+import { getProductImageSources, getProductMainImage, getProductPricing } from "@/lib/product";
 import { formatCurrency } from "@/lib/utils";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +21,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const { isAuthenticated, isReady, customer } = useCustomerSession();
   const product = products.find((item) => item.id === id);
   const productImages = product ? getProductImageSources(product) : [];
+  const pricing = product ? getProductPricing(product) : null;
   const [selectedSize, setSelectedSize] = useState(product?.sizes[0] ?? "");
   const [selectedColor, setSelectedColor] = useState(product?.colors[0]?.name ?? "");
   const [quantity, setQuantity] = useState(1);
@@ -38,7 +39,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     notFound();
   }
 
+  const isOutOfStock = product.availabilityStatus === "Out of Stock";
+
   const handleAddToCart = () => {
+    if (isOutOfStock) {
+      return;
+    }
+
     if (!isReady || !isAuthenticated) {
       setShowAuthRequired(true);
       return;
@@ -53,6 +60,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   };
 
   const handleBuyNow = () => {
+    if (isOutOfStock) {
+      return;
+    }
+
     if (!isReady || !isAuthenticated) {
       setShowAuthRequired(true);
       return;
@@ -117,21 +128,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             {product.isNewArrival ? <Badge>New Arrival</Badge> : null}
             {product.isBestSeller ? <Badge tone="success">Best Seller</Badge> : null}
             {product.isSaleItem ? <Badge tone="warning">Sale</Badge> : null}
+            {isOutOfStock ? <Badge tone="danger">Out of Stock</Badge> : null}
           </div>
           <div>
             <p className="text-sm uppercase tracking-[0.2em] text-black/45">{product.category}</p>
             <h1 className="mt-2 font-display text-4xl text-ink">{product.productName}</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl font-semibold text-ink">
-              {formatCurrency(product.discountPrice ?? product.price)}
-            </span>
-            {product.discountPrice ? (
-              <span className="text-base text-black/40 line-through">{formatCurrency(product.price)}</span>
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-3xl font-semibold text-berry-700">
+                {formatCurrency(pricing?.discountedPrice ?? product.price)}
+              </span>
+              {pricing?.isDiscounted ? (
+                <>
+                  <span className="text-base text-black/40 line-through">{formatCurrency(pricing.originalPrice)}</span>
+                  <span className="rounded-full bg-[#171212] px-3 py-1 text-xs font-black text-white">
+                    {pricing.discountPercentage}% OFF
+                  </span>
+                </>
+              ) : null}
+            </div>
+            {pricing?.isDiscounted ? (
+              <span className="block text-sm font-semibold text-emerald-700">
+                You Save {formatCurrency(pricing.savings)}
+              </span>
             ) : null}
           </div>
           <p className="leading-7 text-black/65">{product.description}</p>
-          <div className="rounded-[28px] bg-white p-5 shadow-soft ring-1 ring-black/5">
+          <div className="rounded-[28px] border border-[#f3dde2] bg-white p-5 shadow-[0_18px_42px_rgba(23,18,18,0.08)]">
             <div>
               <p className="text-sm font-semibold text-ink">Select Size</p>
               <div className="mt-3 flex flex-wrap gap-3">
@@ -139,7 +163,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`rounded-full px-4 py-2 text-sm ${selectedSize === size ? "bg-berry-500 text-white" : "bg-berry-50 text-ink"}`}
+                    className={`rounded-full px-4 py-2 text-sm transition ${selectedSize === size ? "bg-berry-500 text-white shadow-[0_12px_24px_rgba(243,64,120,0.22)]" : "bg-berry-50 text-ink hover:bg-berry-100"}`}
                   >
                     {size}
                   </button>
@@ -153,7 +177,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                   <button
                     key={color.name}
                     onClick={() => setSelectedColor(color.name)}
-                    className={`rounded-full px-4 py-2 text-sm ${selectedColor === color.name ? "bg-ink text-white" : "bg-black/5 text-ink"}`}
+                    className={`rounded-full px-4 py-2 text-sm transition ${selectedColor === color.name ? "bg-ink text-white" : "bg-black/5 text-ink hover:bg-black/10"}`}
                   >
                     <span className="inline-flex items-center gap-2">
                       <span
@@ -168,26 +192,28 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </div>
             <div className="mt-5">
               <p className="text-sm font-semibold text-ink">Quantity</p>
-              <div className="mt-3 flex w-fit items-center rounded-full border border-black/10">
-                <button onClick={() => setQuantity((current) => Math.max(1, current - 1))} className="px-4 py-2">
+              <div className="mt-3 flex w-fit items-center rounded-full border border-black/10 bg-[#fff8fa]">
+                <button onClick={() => setQuantity((current) => Math.max(1, current - 1))} className="px-4 py-2 text-lg text-ink">
                   -
                 </button>
-                <span className="min-w-12 text-center text-sm">{quantity}</span>
-                <button onClick={() => setQuantity((current) => current + 1)} className="px-4 py-2">
+                <span className="min-w-12 text-center text-sm font-semibold">{quantity}</span>
+                <button onClick={() => setQuantity((current) => current + 1)} className="px-4 py-2 text-lg text-ink">
                   +
                 </button>
               </div>
             </div>
             <div className="mt-5 grid gap-3 text-sm text-black/65 sm:grid-cols-2">
-              <p>Stock status: {product.availabilityStatus}</p>
+              <p className={isOutOfStock ? "font-semibold text-rose-600" : ""}>Stock status: {product.availabilityStatus}</p>
               <p>Material: {product.material}</p>
             </div>
             <Link href="/size-guide" className="mt-4 inline-block text-sm font-semibold text-berry-600">
               View size guide
             </Link>
             <div className="mt-6 flex flex-wrap gap-4">
-              <Button onClick={handleAddToCart}>Add to Cart</Button>
-              <Button onClick={handleBuyNow} variant="dark">
+              <Button onClick={handleAddToCart} disabled={isOutOfStock} className={isOutOfStock ? "cursor-not-allowed opacity-55" : ""}>
+                {isOutOfStock ? "Out of Stock" : "Add to Cart"}
+              </Button>
+              <Button onClick={handleBuyNow} variant="dark" disabled={isOutOfStock} className={isOutOfStock ? "cursor-not-allowed opacity-55" : ""}>
                 Buy Now
               </Button>
             </div>

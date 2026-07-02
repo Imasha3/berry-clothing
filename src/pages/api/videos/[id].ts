@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import nextConnect from "next-connect";
-import { deleteCloudinaryAsset } from "@/lib/cloudinary-server";
+import { deleteCloudinaryAsset, updateCloudinaryVideoTitle } from "@/lib/cloudinary-server";
 
 const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
   onError(error, _req, res) {
@@ -8,6 +8,26 @@ const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
   },
   onNoMatch(_req, res) {
     res.status(405).json({ error: "Method not allowed." });
+  }
+});
+
+apiRoute.put(async (req, res) => {
+  const { id } = req.query;
+  const title = req.body?.title?.toString().trim();
+
+  if (!id || typeof id !== "string") {
+    return res.status(400).json({ error: "Video public ID is required." });
+  }
+
+  if (!title) {
+    return res.status(400).json({ error: "Video title is required." });
+  }
+
+  try {
+    await updateCloudinaryVideoTitle(decodeURIComponent(id), title);
+    return res.status(200).json({ success: true, title });
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : "Update failed." });
   }
 });
 

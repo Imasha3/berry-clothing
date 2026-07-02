@@ -4,8 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { SocialLinksRow } from "@/components/common/social-links";
 import { siteNavLinks } from "@/lib/constants";
 import { useCustomerSession } from "@/components/providers/customer-session-provider";
+import { useCart } from "@/components/providers/cart-provider";
 import { cn } from "@/lib/utils";
 import type { StoreSettings } from "@/types/settings";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
@@ -13,8 +15,11 @@ import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings
 export function SiteHeader() {
   const pathname = usePathname();
   const { isAuthenticated, isReady, customer } = useCustomerSession();
+  const { items } = useCart();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     fetchStoreSettings().then(setSettings).catch(() => {
@@ -60,40 +65,69 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="hidden items-center gap-4 text-sm sm:flex">
+          <SocialLinksRow links={settings.socialLinks} className="hidden lg:flex" iconClassName="h-9 w-9 px-2 py-2" />
           <div className="flex items-center gap-1.5 sm:gap-2">
-            <Link
-              href={isReady && isAuthenticated ? "/account" : "/login"}
-              className="font-medium text-black/70 transition hover:text-berry-700"
-            >
-              Sign In
-            </Link>
             {isReady && isAuthenticated && customer?.name ? (
-              <span className="max-w-[70px] truncate text-xs font-semibold text-berry-700 sm:max-w-none">
-                {customer.name}
-              </span>
-            ) : null}
+              <Link
+                href="/account"
+                className="font-medium text-berry-700 transition hover:text-berry-900"
+              >
+                {customer.name.split(" ")[0]}
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="font-medium text-black/70 transition hover:text-berry-700"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
           <Link
             href="/cart"
-            className="rounded-full bg-ink px-4 py-2 text-white transition hover:bg-[#2b1b22] hover:text-[#ffd5e1]"
+            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-ink text-white transition hover:bg-[#2b1b22] hover:text-[#ffd5e1] shadow-soft"
+            aria-label="Shopping Cart"
           >
-            Cart
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+            {isReady && cartItemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-berry-600 text-[10px] font-bold text-white ring-2 ring-white">
+                {cartItemCount}
+              </span>
+            )}
           </Link>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsMobileMenuOpen((current) => !current)}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white shadow-soft transition hover:bg-berry-700 md:hidden"
-          aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-          aria-expanded={isMobileMenuOpen}
-        >
-          <span className="sr-only">{isMobileMenuOpen ? "Close menu" : "Open menu"}</span>
-          <span className="flex flex-col gap-1.5">
-            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "translate-y-2 rotate-45")} />
-            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "opacity-0")} />
-            <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "-translate-y-2 -rotate-45")} />
-          </span>
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <Link
+            href="/cart"
+            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-white text-ink shadow-soft ring-1 ring-[#f1d9dd] transition hover:text-berry-700"
+            aria-label="Shopping Cart"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+            </svg>
+            {isReady && cartItemCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-berry-600 text-[10px] font-bold text-white ring-2 ring-white">
+                {cartItemCount}
+              </span>
+            )}
+          </Link>
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen((current) => !current)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-ink text-white shadow-soft transition hover:bg-berry-700"
+            aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={isMobileMenuOpen}
+          >
+            <span className="sr-only">{isMobileMenuOpen ? "Close menu" : "Open menu"}</span>
+            <span className="flex flex-col gap-1.5">
+              <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "translate-y-2 rotate-45")} />
+              <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "opacity-0")} />
+              <span className={cn("h-0.5 w-5 rounded-full bg-white transition", isMobileMenuOpen && "-translate-y-2 -rotate-45")} />
+            </span>
+          </button>
+        </div>
       </div>
       {isMobileMenuOpen ? (
         <div className="border-t border-[#f1d9dd] bg-[#fffaf8] px-4 pb-5 pt-2 shadow-[0_18px_35px_rgba(44,24,33,0.08)] md:hidden">
@@ -117,13 +151,21 @@ export function SiteHeader() {
                 href={isReady && isAuthenticated ? "/account" : "/login"}
                 className="rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-black/70 ring-1 ring-black/5"
               >
-                {isReady && isAuthenticated ? "Account" : "Sign In"}
+                {isReady && isAuthenticated && customer?.name ? customer.name.split(" ")[0] : "Sign In"}
               </Link>
               <Link
                 href="/cart"
-                className="rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white"
+                className="flex items-center justify-center gap-2 rounded-2xl bg-ink px-4 py-3 text-center text-sm font-semibold text-white"
               >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" />
+                </svg>
                 Cart
+                {isReady && cartItemCount > 0 && (
+                  <span className="ml-1 rounded-full bg-berry-600 px-2 py-0.5 text-[10px] font-bold text-white">
+                    {cartItemCount}
+                  </span>
+                )}
               </Link>
             </div>
           </nav>

@@ -13,6 +13,7 @@ import {
 import { useMockCategories } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { uploadCloudinaryAsset } from "@/lib/cloudinary";
+import { calculateDiscountedPrice } from "@/lib/product";
 import type {
   Product,
   ProductAvailabilityStatus,
@@ -49,7 +50,7 @@ function createEmptyProduct() {
     sku: "",
     category: defaultCategory,
     price: "",
-    discountPrice: "",
+    discountPercentage: "",
     material: "",
     description: "",
     stockQuantity: "0",
@@ -119,7 +120,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
           sku: initialProduct.sku,
           category: initialProduct.category,
           price: String(initialProduct.price),
-          discountPrice: initialProduct.discountPrice ? String(initialProduct.discountPrice) : "",
+          discountPercentage: initialProduct.discountPercentage ? String(initialProduct.discountPercentage) : "",
           material: initialProduct.material,
           description: initialProduct.description,
           stockQuantity: String(initialProduct.stockQuantity),
@@ -413,6 +414,10 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
     const stockQuantity = Number(fields.stockQuantity || 0);
     const minStockLevel = Number(fields.minStockLevel || 0);
+    const originalPrice = Number(fields.price || 0);
+    const discountPercentage = Math.min(100, Math.max(0, Number(fields.discountPercentage || 0)));
+    const isDiscounted = discountPercentage > 0;
+    const discountedPrice = isDiscounted ? calculateDiscountedPrice(originalPrice, discountPercentage) : undefined;
     const normalizedImages = uploadedImages.map((image) => {
       const imageUrl = getPersistableImageUrl(image);
       return {
@@ -433,8 +438,12 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       productName: fields.productName.trim(),
       sku: fields.sku.trim(),
       category: fields.category,
-      price: Number(fields.price || 0),
-      discountPrice: fields.discountPrice ? Number(fields.discountPrice) : undefined,
+      price: originalPrice,
+      originalPrice,
+      discountPercentage,
+      discountedPrice,
+      discountPrice: discountedPrice,
+      isDiscounted,
       sizes: isGiftItemsCategory ? [] : sizes,
       colors: isGiftItemsCategory ? [] : colors,
       material: isGiftItemsCategory ? "" : fields.material.trim(),
@@ -449,7 +458,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       variants: isGiftItemsCategory ? [] : variants,
       isNewArrival: fields.isNewArrival,
       isBestSeller: fields.isBestSeller,
-      isSaleItem: fields.isSaleItem,
+      isSaleItem: fields.isSaleItem || isDiscounted,
       featuredReview: initialProduct?.featuredReview
     };
 
@@ -540,15 +549,21 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
           />
         </label>
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-ink">Discount price</span>
+          <span className="text-sm font-semibold text-ink">Discount percentage</span>
           <input
             type="number"
             min="0"
-            value={fields.discountPrice}
-            onChange={(event) => handleFieldChange("discountPrice", event.target.value)}
-            placeholder="Optional sale price"
+            max="100"
+            value={fields.discountPercentage}
+            onChange={(event) => handleFieldChange("discountPercentage", event.target.value)}
+            placeholder="Example: 20"
             className="w-full rounded-2xl border border-black/10 px-4 py-3 text-sm"
           />
+          {Number(fields.discountPercentage || 0) > 0 && Number(fields.price || 0) > 0 ? (
+            <span className="block text-xs font-semibold text-berry-700">
+              Discounted price: LKR {calculateDiscountedPrice(Number(fields.price || 0), Number(fields.discountPercentage || 0)).toLocaleString()}
+            </span>
+          ) : null}
         </label>
         {!isGiftItemsCategory ? (
           <label className="space-y-2">

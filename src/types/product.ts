@@ -47,6 +47,10 @@ export interface Product {
   category: string;
   price: number;
   discountPrice?: number;
+  discountPercentage?: number;
+  originalPrice?: number;
+  discountedPrice?: number;
+  isDiscounted?: boolean;
   sizes: string[];
   colors: ProductColor[];
   material: string;

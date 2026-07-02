@@ -8,7 +8,7 @@ import { ProductImage } from "@/components/product/product-image";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { Badge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
-import { getLowStockVariants, getProductMainImage } from "@/lib/product";
+import { getLowStockVariants, getProductMainImage, getProductPricing } from "@/lib/product";
 import { formatCurrency } from "@/lib/utils";
 
 export default function AdminProductsPage() {
@@ -70,7 +70,7 @@ export default function AdminProductsPage() {
         <table className="min-w-full text-left text-sm">
           <thead className="bg-[#fff6f5]">
             <tr>
-              {["Product", "SKU", "Category", "Price", "Discount Price", "Stock", "Availability", "Actions"].map((head) => (
+              {["Product", "SKU", "Category", "Price", "Discount", "Stock", "Availability", "Actions"].map((head) => (
                 <th key={head} className="px-4 py-4 font-semibold text-ink">
                   {head}
                 </th>
@@ -80,6 +80,7 @@ export default function AdminProductsPage() {
           <tbody>
             {filteredProducts.map((product) => {
               const lowStockVariantCount = getLowStockVariants(product).length;
+              const pricing = getProductPricing(product);
 
               return (
                 <tr key={product.id} className="border-t border-black/8">
@@ -103,9 +104,16 @@ export default function AdminProductsPage() {
                   </td>
                   <td className="px-4 py-4 text-black/70">{product.sku}</td>
                   <td className="px-4 py-4 text-black/70">{product.category}</td>
-                  <td className="px-4 py-4 text-black/70">{formatCurrency(product.price)}</td>
+                  <td className="px-4 py-4 text-black/70">{formatCurrency(pricing.originalPrice)}</td>
                   <td className="px-4 py-4 text-black/70">
-                    {product.discountPrice ? formatCurrency(product.discountPrice) : "-"}
+                    {pricing.isDiscounted ? (
+                      <div>
+                        <p className="font-semibold text-berry-700">{pricing.discountPercentage}% OFF</p>
+                        <p>{formatCurrency(pricing.discountedPrice)}</p>
+                      </div>
+                    ) : (
+                      "-"
+                    )}
                   </td>
                   <td className="px-4 py-4 text-black/70">{product.stockQuantity}</td>
                   <td className="px-4 py-4">

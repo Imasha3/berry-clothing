@@ -3,120 +3,91 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SocialLinksRow } from "@/components/common/social-links";
 import type { StoreSettings } from "@/types/settings";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 
-const links = [
+const quickLinks = [
+  { href: "/shop", label: "Shop" },
   { href: "/about", label: "About Us" },
   { href: "/contact", label: "Contact Us" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/return-policy", label: "Returns & Exchanges" },
+  { href: "/size-guide", label: "Size Guide" },
+  { href: "/return-policy", label: "Returns" },
   { href: "/privacy-policy", label: "Privacy Policy" },
-  { href: "/terms", label: "Terms & Conditions" }
+  { href: "/terms", label: "Terms" }
 ];
+
+function mergeSettings(settings: StoreSettings): StoreSettings {
+  return {
+    ...DEFAULT_STORE_SETTINGS,
+    ...settings,
+    socialLinks: {
+      ...DEFAULT_STORE_SETTINGS.socialLinks,
+      ...settings.socialLinks
+    },
+    bankDetails: {
+      ...DEFAULT_STORE_SETTINGS.bankDetails,
+      ...settings.bankDetails
+    }
+  };
+}
 
 export function SiteFooter() {
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
   useEffect(() => {
     fetchStoreSettings()
-      .then((nextSettings) => {
-        setSettings({
-          ...DEFAULT_STORE_SETTINGS,
-          ...nextSettings,
-          socialLinks: {
-            ...DEFAULT_STORE_SETTINGS.socialLinks,
-            ...nextSettings.socialLinks
-          },
-          bankDetails: {
-            ...DEFAULT_STORE_SETTINGS.bankDetails,
-            ...nextSettings.bankDetails
-          }
-        });
-      })
+      .then((nextSettings) => setSettings(mergeSettings(nextSettings)))
       .catch(() => setSettings(DEFAULT_STORE_SETTINGS));
   }, []);
 
-  const socialLinks = settings.socialLinks ?? DEFAULT_STORE_SETTINGS.socialLinks;
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-black/5 bg-[#fff8f7]">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+    <footer className="border-t border-white/10 bg-[#171212] text-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
         <div>
-          <Image
-            src="/berry-logo.jpeg"
-            alt="Berry logo"
-            width={500}
-            height={500}
-            className="h-20 w-auto"
-          />
-          <p className="mt-3 max-w-md text-sm leading-6 text-black/65">{settings.description || DEFAULT_STORE_SETTINGS.description}</p>
-          <p className="mt-4 text-sm font-semibold text-berry-700">{settings.footerText || DEFAULT_STORE_SETTINGS.footerText}</p>
+          <Link href="/" className="inline-flex items-center gap-4">
+            <Image
+              src="/berry-logo.jpeg"
+              alt="Berry logo"
+              width={500}
+              height={500}
+              className="h-16 w-16 rounded-full object-cover ring-1 ring-white/20"
+            />
+            <div>
+              <p className="font-display text-2xl">{settings.storeName}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ffb6c9]">Boutique Wear</p>
+            </div>
+          </Link>
+          <p className="mt-5 max-w-md text-sm leading-7 text-white/64">
+            {settings.description || DEFAULT_STORE_SETTINGS.description}
+          </p>
+          <SocialLinksRow links={settings.socialLinks} className="mt-6" iconClassName="bg-white/95" />
         </div>
+
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-berry-700">Explore</p>
-          <div className="mt-4 space-y-3 text-sm">
-            {links.map((link) => (
-              <Link key={link.href} href={link.href} className="block text-black/65 hover:text-berry-600">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ffb6c9]">Contact</p>
+          <div className="mt-5 space-y-4 text-sm leading-6 text-white/68">
+            {settings.contactEmail ? <p>Email: {settings.contactEmail}</p> : null}
+            {settings.contactPhone ? <p>Phone: {settings.contactPhone}</p> : null}
+            {settings.address ? <p>Address: {settings.address}</p> : null}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ffb6c9]">Quick Links</p>
+          <div className="mt-5 grid grid-cols-2 gap-3 text-sm text-white/68">
+            {quickLinks.map((link) => (
+              <Link key={link.href} href={link.href} className="transition hover:text-white">
                 {link.label}
               </Link>
             ))}
           </div>
         </div>
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-berry-700">Contact</p>
-          <div className="mt-4 space-y-3 text-sm text-black/65">
-            {settings.contactPhone ? <p>{settings.contactPhone}</p> : null}
-            {settings.contactEmail ? <p>{settings.contactEmail}</p> : null}
-            {settings.address ? <p>{settings.address}</p> : null}
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              {socialLinks.facebook ? (
-                <a
-                  href={socialLinks.facebook}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#4267b2] text-white"
-                  aria-label="Facebook"
-                >
-                  f
-                </a>
-              ) : null}
-              {socialLinks.instagram ? (
-                <a
-                  href={socialLinks.instagram}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#515bd4] text-white"
-                  aria-label="Instagram"
-                >
-                  in
-                </a>
-              ) : null}
-              {socialLinks.tiktok ? (
-                <a
-                  href={socialLinks.tiktok}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white"
-                  aria-label="TikTok"
-                >
-                  t
-                </a>
-              ) : null}
-              {socialLinks.youtube ? (
-                <a
-                  href={socialLinks.youtube}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#ff0000] text-white"
-                  aria-label="YouTube"
-                >
-                  y
-                </a>
-              ) : null}
-            </div>
-          </div>
-        </div>
+      </div>
+      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/48 sm:px-6">
+        © {year} {settings.storeName}. {settings.footerText || DEFAULT_STORE_SETTINGS.footerText}
       </div>
     </footer>
   );

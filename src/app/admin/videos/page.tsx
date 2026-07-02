@@ -14,6 +14,8 @@ export default function AdminVideosPage() {
   const [feedback, setFeedback] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
 
   useEffect(() => {
     void fetchVideos();
@@ -103,6 +105,47 @@ export default function AdminVideosPage() {
     }
   };
 
+  const startEditing = (video: Video) => {
+    setEditingVideoId(video.publicId || video.id);
+    setEditingTitle(video.title);
+    setFeedback("");
+  };
+
+  const handleUpdate = async (video: Video) => {
+    const videoId = video.publicId || video.id;
+    const title = editingTitle.trim();
+
+    if (!title) {
+      setFeedback("Enter a video title before saving.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/videos/${encodeURIComponent(videoId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title })
+      });
+      const result = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(result?.error || "Could not update video.");
+      }
+
+      setVideos((current) =>
+        current.map((entry) => ((entry.publicId || entry.id) === videoId ? { ...entry, title } : entry))
+      );
+      setEditingVideoId(null);
+      setEditingTitle("");
+      setFeedback("Video updated.");
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : "Could not update video.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AdminPage
       eyebrow="Media"
@@ -163,20 +206,64 @@ export default function AdminVideosPage() {
                     No videos have been uploaded yet.
                   </div>
                 ) : (
-                  videos.map((video) => (
+                  videos.map((video) => {
+                    const videoId = video.publicId || video.id;
+                    const isEditing = editingVideoId === videoId;
+
+                    return (
                     <div key={video.id} className="rounded-[24px] border border-black/10 bg-[#fcf6f2] p-4">
                       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                         <div>
-                          <p className="font-semibold text-ink">{video.title}</p>
+                          {isEditing ? (
+                            <input
+                              value={editingTitle}
+                              onChange={(event) => setEditingTitle(event.target.value)}
+                              className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm font-semibold text-ink md:w-[320px]"
+                              aria-label="Video title"
+                            />
+                          ) : (
+                            <p className="font-semibold text-ink">{video.title}</p>
+                          )}
                           <p className="mt-1 text-sm text-black/60">Uploaded {formatDate(video.createdAt)}</p>
                         </div>
-                        <button
-                          onClick={() => void handleDelete(video)}
-                          className={buttonStyles("secondary", "text-rose-600")}
-                          disabled={isLoading}
-                        >
-                          Delete
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {isEditing ? (
+                            <>
+                              <button
+                                onClick={() => void handleUpdate(video)}
+                                className={buttonStyles("primary")}
+                                disabled={isLoading}
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingVideoId(null);
+                                  setEditingTitle("");
+                                }}
+                                className={buttonStyles("secondary")}
+                                disabled={isLoading}
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(video)}
+                              className={buttonStyles("secondary")}
+                              disabled={isLoading}
+                            >
+                              Edit
+                            </button>
+                          )}
+                          <button
+                            onClick={() => void handleDelete(video)}
+                            className={buttonStyles("secondary", "text-rose-600")}
+                            disabled={isLoading}
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       <div className="mt-4 overflow-hidden rounded-[20px] bg-black">
                         <video controls className="w-full rounded-[20px] bg-black">
@@ -185,7 +272,8 @@ export default function AdminVideosPage() {
                         </video>
                       </div>
                     </div>
-                  ))
+                  );
+                  })
                 )}
               </div>
             </div>

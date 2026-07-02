@@ -16,6 +16,8 @@ export default function AccountOverviewPage() {
   const customerOrders = orders.filter((order) => order.customerId === customer.id);
   const totalSpending = customerOrders.reduce((sum, order) => sum + order.total, 0);
 
+  const hasPurchases = customerOrders.length > 0;
+
   const cards = [
     {
       title: "My Profile",
@@ -27,11 +29,15 @@ export default function AccountOverviewPage() {
       description: `View ${customerOrders.length} order record(s), invoices, and status history.`,
       href: "/account/orders"
     },
-    {
-      title: "Payment History",
-      description: "Review COD, bank deposit, and card payment activity.",
-      href: "/account/payment-history"
-    },
+    ...(hasPurchases
+      ? [
+          {
+            title: "Payment History",
+            description: "Review COD, bank deposit, and card payment activity.",
+            href: "/account/payment-history"
+          }
+        ]
+      : []),
     {
       title: "Delivery Addresses",
       description: `Manage ${customer.addresses.length} saved delivery address(es).`,
@@ -96,14 +102,10 @@ export default function AccountOverviewPage() {
             View All Orders
           </Link>
         </div>
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           <div className="rounded-[24px] bg-[#fff5f4] p-4 text-sm text-black/60">
             <p className="font-semibold text-ink">Notifications</p>
             <p className="mt-2">{customer.notifications.length} items</p>
-          </div>
-          <div className="rounded-[24px] bg-[#fff5f4] p-4 text-sm text-black/60">
-            <p className="font-semibold text-ink">Payment Methods Used</p>
-            <p className="mt-2">COD, Deposit, Card</p>
           </div>
           <div className="rounded-[24px] bg-[#fff5f4] p-4 text-sm text-black/60">
             <p className="font-semibold text-ink">Return Requests</p>

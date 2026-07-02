@@ -9,7 +9,7 @@ import {
   type PropsWithChildren
 } from "react";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
-import { getProductMainImage } from "@/lib/product";
+import { getProductMainImage, getProductPricing } from "@/lib/product";
 
 export interface CartItem {
   productId: string;
@@ -18,6 +18,9 @@ export interface CartItem {
   size: string;
   color: string;
   price: number;
+  originalPrice: number;
+  discountAmount: number;
+  discountPercentage: number;
   quantity: number;
   sku: string;
 }
@@ -25,7 +28,14 @@ export interface CartItem {
 interface CartContextValue {
   items: CartItem[];
   subtotal: number;
-  addItem: (item: Omit<CartItem, "image" | "productName" | "price" | "sku">) => void;
+  originalSubtotal: number;
+  discountTotal: number;
+  addItem: (
+    item: Omit<
+      CartItem,
+      "image" | "productName" | "price" | "sku" | "originalPrice" | "discountAmount" | "discountPercentage"
+    >
+  ) => void;
   updateQuantity: (productId: string, size: string, color: string, quantity: number) => void;
   removeItem: (productId: string, size: string, color: string) => void;
   clearCart: () => void;
@@ -53,6 +63,8 @@ export function CartProvider({ children }: PropsWithChildren) {
   const addItem: CartContextValue["addItem"] = ({ productId, size, color, quantity }) => {
     const product = products.find((entry) => entry.id === productId);
     if (!product) return;
+    if (product.availabilityStatus === "Out of Stock") return;
+    const pricing = getProductPricing(product);
 
     setItems((current) => {
       const existing = current.find(
@@ -74,7 +86,10 @@ export function CartProvider({ children }: PropsWithChildren) {
           size,
           color,
           quantity,
-          price: product.discountPrice ?? product.price,
+          price: pricing.discountedPrice,
+          originalPrice: pricing.originalPrice,
+          discountAmount: pricing.savings,
+          discountPercentage: pricing.discountPercentage,
           sku: product.sku
         }
       ];
@@ -101,16 +116,41 @@ export function CartProvider({ children }: PropsWithChildren) {
 
   const clearCart = () => setItems([]);
 
+  const pricedItems = useMemo(
+    () =>
+      items.map((item) => {
+        const product = products.find((entry) => entry.id === item.productId);
+        if (!product) {
+          return item;
+        }
+
+        const pricing = getProductPricing(product);
+        return {
+          ...item,
+          productName: product.productName,
+          image: getProductMainImage(product),
+          sku: product.sku,
+          price: pricing.discountedPrice,
+          originalPrice: pricing.originalPrice,
+          discountAmount: pricing.savings,
+          discountPercentage: pricing.discountPercentage
+        };
+      }),
+    [items, products]
+  );
+
   const value = useMemo(
     () => ({
-      items,
-      subtotal: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      items: pricedItems,
+      subtotal: pricedItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      originalSubtotal: pricedItems.reduce((sum, item) => sum + (item.originalPrice ?? item.price) * item.quantity, 0),
+      discountTotal: pricedItems.reduce((sum, item) => sum + (item.discountAmount ?? 0) * item.quantity, 0),
       addItem,
       updateQuantity,
       removeItem,
       clearCart
     }),
-    [items]
+    [pricedItems]
   );
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

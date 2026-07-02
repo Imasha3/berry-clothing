@@ -24,7 +24,8 @@ export async function uploadVideoToCloudinary(filePath: string, filename: string
   return cloudinary.uploader.upload(filePath, {
     resource_type: "video",
     folder: VIDEO_FOLDER,
-    public_id: filename.replace(/\.[^/.]+$/, "")
+    public_id: filename.replace(/\.[^/.]+$/, ""),
+    display_name: filename.replace(/\.[^/.]+$/, "")
   });
 }
 
@@ -32,6 +33,19 @@ export async function deleteCloudinaryAsset(publicId: string) {
   assertCloudinaryCredentials();
 
   return cloudinary.uploader.destroy(publicId, { resource_type: "video" });
+}
+
+export async function updateCloudinaryVideoTitle(publicId: string, title: string) {
+  assertCloudinaryCredentials();
+
+  return cloudinary.uploader.explicit(publicId, {
+    resource_type: "video",
+    type: "upload",
+    display_name: title,
+    context: {
+      caption: title
+    }
+  });
 }
 
 export async function listCloudinaryVideos() {
@@ -51,12 +65,22 @@ export async function listCloudinaryVideos() {
     created_at: string;
     display_name?: string;
     filename?: string;
+    context?: {
+      custom?: {
+        caption?: string;
+      };
+    };
     format?: string;
     bytes?: number;
     duration?: number;
   }) => ({
     id: resource.public_id,
-    title: resource.display_name || resource.filename || resource.public_id.split("/").pop() || "Fashion video",
+    title:
+      resource.context?.custom?.caption ||
+      resource.display_name ||
+      resource.filename ||
+      resource.public_id.split("/").pop() ||
+      "Fashion video",
     videoUrl: resource.secure_url,
     publicId: resource.public_id,
     createdAt: resource.created_at,

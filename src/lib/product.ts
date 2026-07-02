@@ -55,3 +55,30 @@ export function getProductVariantLabel(colorName: string, size: string) {
 export function getLowStockVariants(product: Product) {
   return product.variants.filter((variant) => variant.stockQuantity <= product.minStockLevel);
 }
+
+export function calculateDiscountedPrice(originalPrice: number, discountPercentage: number) {
+  const normalizedPercentage = Math.min(100, Math.max(0, discountPercentage));
+  return Math.round((originalPrice - originalPrice * normalizedPercentage / 100) * 100) / 100;
+}
+
+export function getProductPricing(product: Product) {
+  const originalPrice = product.originalPrice ?? product.price;
+  const discountPercentage =
+    product.discountPercentage ??
+    (product.discountPrice && product.discountPrice < originalPrice
+      ? Math.round(((originalPrice - product.discountPrice) / originalPrice) * 100)
+      : 0);
+  const isDiscounted = Boolean(product.isDiscounted ?? discountPercentage > 0);
+  const discountedPrice = isDiscounted
+    ? product.discountedPrice ?? product.discountPrice ?? calculateDiscountedPrice(originalPrice, discountPercentage)
+    : originalPrice;
+  const savings = Math.max(0, originalPrice - discountedPrice);
+
+  return {
+    originalPrice,
+    discountPercentage,
+    discountedPrice,
+    isDiscounted: isDiscounted && savings > 0,
+    savings
+  };
+}
