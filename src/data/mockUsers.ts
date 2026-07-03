@@ -77,4 +77,39 @@ export const mockRoles: Role[] = [
   }
 ];
 
-export const mockUsers: AdminUser[] = [];
+export const mockUsers: AdminUser[] = [
+  {
+    id: "admin-seeded",
+    fullName: "Admin User",
+    username: "admin",
+    email: "admin@berryclothing.com",
+    phone: "0000000000",
+    role: "super-admin",
+    password: "123456789",
+    status: "Active",
+    canManageUsers: true,
+    canManageRoles: true,
+    canDeleteUsers: true,
+    isSuperAdmin: true,
+    avatar: "AU",
+    createdAt: "2026-06-01T08:00:00.000Z",
+    updatedAt: "2026-06-01T08:00:00.000Z"
+  },
+  {
+    id: "super-admin-seeded",
+    fullName: "Super Admin",
+    username: "superadmin",
+    email: "superadmin@berryclothing.com",
+    phone: "0000000000",
+    role: "super-admin",
+    password: "SuperAdmin123!",
+    status: "Active",
+    canManageUsers: true,
+    canManageRoles: true,
+    canDeleteUsers: true,
+    isSuperAdmin: true,
+    avatar: "SA",
+    createdAt: "2026-06-01T08:00:00.000Z",
+    updatedAt: "2026-06-01T08:00:00.000Z"
+  }
+];

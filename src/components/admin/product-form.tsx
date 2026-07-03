@@ -475,6 +475,23 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       return;
     }
 
+    if (initialProduct?.images) {
+      const deletedImages = initialProduct.images.filter(
+        (oldImg) => !normalizedImages.some((newImg) => newImg.id === oldImg.id)
+      );
+
+      for (const img of deletedImages) {
+        if (img.id.startsWith("berry-clothing/products/")) {
+          try {
+            const url = `/api/product-images?publicId=${encodeURIComponent(img.id)}`;
+            await fetch(url, { method: "DELETE" });
+          } catch (err) {
+            console.error("Failed to delete removed image from Cloudinary:", err);
+          }
+        }
+      }
+    }
+
     updateProduct(initialProduct!.id, normalizedProduct);
     setMessage("Product updated successfully.");
   };

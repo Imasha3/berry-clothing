@@ -29,10 +29,10 @@ export async function uploadVideoToCloudinary(filePath: string, filename: string
   });
 }
 
-export async function deleteCloudinaryAsset(publicId: string) {
+export async function deleteCloudinaryAsset(publicId: string, resourceType: "video" | "image" = "video") {
   assertCloudinaryCredentials();
 
-  return cloudinary.uploader.destroy(publicId, { resource_type: "video" });
+  return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 }
 
 export async function updateCloudinaryVideoTitle(publicId: string, title: string) {

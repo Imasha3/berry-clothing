@@ -6,6 +6,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type PropsWithChildren
 } from "react";
 import {
@@ -225,6 +226,14 @@ function applyCloudinaryProductImages(products: Product[], cloudinaryImages: Clo
   }
 
   return products.map((product, index) => {
+    // If the product already has its own uploaded Cloudinary images, keep them
+    const hasRealImages = product.images.some(
+      (img) => img.id && img.id.startsWith("berry-clothing/products/")
+    );
+    if (hasRealImages) {
+      return product;
+    }
+
     const image = cloudinaryImages[index % cloudinaryImages.length];
     const nextImage = {
       id: image.id || `cloudinary-product-${index}`,
@@ -378,6 +387,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
   const defaults = getDefaultStore();
   const [isReady, setIsReady] = useState(false);
   const [dataMode, setDataMode] = useState<DataMode>("mock");
+  const cloudinaryImagesRef = useRef<CloudinaryProductImage[]>([]);
   const [products, setProducts] = useState<Product[]>(defaults.products);
   const [categories, setCategories] = useState<Category[]>(defaults.categories);
   const [orders, setOrders] = useState<Order[]>(defaults.orders);
@@ -419,6 +429,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
           return;
         }
 
+        cloudinaryImagesRef.current = cloudinaryImages;
         setProducts((currentProducts) =>
           applyCloudinaryProductImages(currentProducts, cloudinaryImages).map(normalizeProduct)
         );
@@ -485,6 +496,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
             return;
           }
 
+          cloudinaryImagesRef.current = cloudinaryImages;
           setProducts((currentProducts) =>
             applyCloudinaryProductImages(currentProducts, cloudinaryImages).map(normalizeProduct)
           );
@@ -493,13 +505,14 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         unsubscribes = [
           onSnapshot(collection(db, firestoreCollections.products), (snapshot) => {
             if (cancelled) return;
+            const freshProducts = snapshot.docs
+              .map((entry) => ({
+                id: entry.id,
+                ...(entry.data() as Omit<Product, "id">)
+              }))
+              .map(normalizeProduct);
             setProducts(
-              snapshot.docs
-                .map((entry) => ({
-                  id: entry.id,
-                  ...(entry.data() as Omit<Product, "id">)
-                }))
-                .map(normalizeProduct)
+              applyCloudinaryProductImages(freshProducts, cloudinaryImagesRef.current)
             );
           }),
           onSnapshot(collection(db, firestoreCollections.categories), (snapshot) => {
@@ -658,6 +671,21 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         persistCurrentMockStore({ products: nextProducts });
       },
       deleteProduct: async (productId) => {
+        const productToDelete = products.find((p) => p.id === productId);
+        if (productToDelete && productToDelete.images) {
+          const cloudinaryImages = productToDelete.images.filter((img) =>
+            img.id.startsWith("berry-clothing/products/")
+          );
+          for (const img of cloudinaryImages) {
+            try {
+              const url = `/api/product-images?publicId=${encodeURIComponent(img.id)}`;
+              await fetch(url, { method: "DELETE" });
+            } catch (err) {
+              console.error("Failed to delete product image from Cloudinary:", err);
+            }
+          }
+        }
+
         if (dataMode === "firestore") {
           const db = getFirestoreDb();
           if (db) {
