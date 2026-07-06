@@ -113,6 +113,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
   const router = useRouter();
   const { addProduct, updateProduct } = useCommerceStore();
   const { activeCategories, isReady: categoriesReady } = useMockCategories();
+  const [isSaving, setIsSaving] = useState(false);
   const [fields, setFields] = useState(() =>
     initialProduct
       ? {
@@ -365,6 +366,8 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     setMessage("");
 
     let uploadFailed = false;
@@ -409,6 +412,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
     if (uploadFailed) {
       setMessage("Some media uploads failed. Please remove failed items or try again.");
+      setIsSaving(false);
       return;
     }
 
@@ -494,6 +498,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
     updateProduct(initialProduct!.id, normalizedProduct);
     setMessage("Product updated successfully.");
+    setIsSaving(false);
   };
 
   const lowStockVariants = variants.filter(
@@ -918,7 +923,9 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit">{mode === "add" ? "Create product" : "Save product changes"}</Button>
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? "Saving..." : mode === "add" ? "Create product" : "Save product changes"}
+        </Button>
         <Button type="button" variant="secondary" onClick={() => setMessage("")}>
           Clear notice
         </Button>
