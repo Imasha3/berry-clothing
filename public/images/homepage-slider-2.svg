@@ -1,0 +1,22 @@
+<svg width="1920" height="700" viewBox="0 0 1920 700" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1920" height="700" rx="0" fill="#FCF7F4"/>
+  <rect width="1920" height="700" fill="url(#bg)"/>
+  <circle cx="1450" cy="210" r="260" fill="#E9C0CF" fill-opacity="0.75"/>
+  <circle cx="400" cy="530" r="300" fill="#F7D6C8" fill-opacity="0.78"/>
+  <rect x="110" y="138" width="820" height="430" rx="36" fill="#FFFDFD" fill-opacity="0.92"/>
+  <rect x="176" y="208" width="274" height="312" rx="26" fill="#171212"/>
+  <rect x="492" y="208" width="250" height="182" rx="24" fill="#F4C8D8"/>
+  <rect x="492" y="420" width="250" height="58" rx="16" fill="#171212"/>
+  <rect x="1064" y="208" width="580" height="184" rx="32" fill="#FFFFFF" fill-opacity="0.9"/>
+  <rect x="1064" y="430" width="390" height="26" rx="13" fill="#171212" fill-opacity="0.16"/>
+  <rect x="1064" y="470" width="338" height="26" rx="13" fill="#171212" fill-opacity="0.12"/>
+  <rect x="1064" y="510" width="284" height="26" rx="13" fill="#171212" fill-opacity="0.1"/>
+  <path d="M1200 566C1200 522.98 1232.98 490 1276 490H1558C1601.02 490 1634 522.98 1634 566V610H1200V566Z" fill="#171212"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1920" y2="700" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF5F7"/>
+      <stop offset="0.45" stop-color="#FDE9E4"/>
+      <stop offset="1" stop-color="#F4C8D8"/>
+    </linearGradient>
+  </defs>
+</svg>

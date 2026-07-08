@@ -4,36 +4,15 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { SectionHeading } from "@/components/common/section-heading";
 import { SocialLinksRow } from "@/components/common/social-links";
-import { ProductImage } from "@/components/product/product-image";
 import { ProductGrid } from "@/components/product/product-grid";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { buttonStyles } from "@/components/ui/button";
 import { LatestFashionVideos } from "@/components/video/latest-fashion-videos";
-import { getProductMainImage, getProductPricing } from "@/lib/product";
+import { getProductPricing } from "@/lib/product";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 import { cn } from "@/lib/utils";
+import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
-
-const heroSlides = [
-  {
-    eyebrow: "Berry Clothing",
-    title: "Discover Your Style",
-    description:
-      "New arrivals, season sale styles, and premium everyday fashion curated with a clean boutique feel."
-  },
-  {
-    eyebrow: "Season Sale",
-    title: "Shop Premium Fashion",
-    description:
-      "Elegant clothing picks with modern silhouettes, soft colors, and easy styling for every plan."
-  },
-  {
-    eyebrow: "Limited Offers",
-    title: "Trending Deals Are Live",
-    description:
-      "Browse sale favorites, best sellers, and new discounts before they move out of stock."
-  }
-];
 
 function mergeSettings(settings: StoreSettings): StoreSettings {
   return {
@@ -54,20 +33,36 @@ export default function HomePage() {
   const { products } = useCommerceStore();
   const [activeSlide, setActiveSlide] = useState(0);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
+  const [slides, setSlides] = useState<HomepageSliderItem[]>([]);
 
   useEffect(() => {
     fetchStoreSettings()
-      .then((nextSettings) => setSettings(mergeSettings(nextSettings)))
-      .catch(() => setSettings(DEFAULT_STORE_SETTINGS));
+      .then((nextSettings) => {
+        const merged = mergeSettings(nextSettings);
+        setSettings(merged);
+        const nextSlides = (merged.homepageSliderItems ?? [])
+          .filter((slide) => slide?.isActive && slide?.imageUrl)
+          .sort((left, right) => left.order - right.order);
+        setSlides(nextSlides);
+        setActiveSlide(0);
+      })
+      .catch(() => {
+        setSettings(DEFAULT_STORE_SETTINGS);
+        setSlides([]);
+      });
   }, []);
 
   useEffect(() => {
+    if (slides.length < 2) {
+      return;
+    }
+
     const interval = window.setInterval(() => {
-      setActiveSlide((current) => (current + 1) % heroSlides.length);
-    }, 5200);
+      setActiveSlide((current) => (current + 1) % slides.length);
+    }, 5000);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [slides.length]);
 
   const latestProducts = useMemo(
     () => products.filter((product) => product.isNewArrival).slice(0, 4),
@@ -93,6 +88,7 @@ export default function HomePage() {
     () => (trendingDeals.length ? trendingDeals : products).slice(0, 3),
     [products, trendingDeals]
   );
+  const currentSlide = slides[activeSlide];
   const reviews = useMemo(
     () =>
       products
@@ -102,81 +98,81 @@ export default function HomePage() {
     [products]
   );
 
-  const slide = heroSlides[activeSlide];
   const socialLinks = settings.socialLinks ?? DEFAULT_STORE_SETTINGS.socialLinks;
 
   return (
     <div className="overflow-hidden pb-20">
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,_#fffdfa_0%,_#fff5f4_45%,_#fef1f4_100%)]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(243,64,120,0.14),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(255,255,255,0.6),_transparent_24%)]" />
-        <div className="relative mx-auto grid min-h-[calc(100vh-88px)] max-w-7xl items-center gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
-          <div>
-            <div className="mb-6 inline-flex items-center gap-3 rounded-full bg-white px-3 py-2 shadow-soft ring-1 ring-black/5">
-              <img src="/berry-logo.jpeg" alt="" className="h-9 w-9 rounded-full object-cover" />
-              <span className="text-xs font-semibold uppercase tracking-[0.26em] text-berry-700">
-                {slide.eyebrow}
-              </span>
-            </div>
-            <h1 className="max-w-2xl font-display text-5xl leading-[1.02] text-ink sm:text-6xl lg:text-7xl">
-              {slide.title}
-            </h1>
-            <p className="mt-6 max-w-xl text-base leading-8 text-black/68 sm:text-lg">{slide.description}</p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link href="/shop" className={buttonStyles("primary", "px-7 shadow-[0_22px_45px_rgba(243,64,120,0.34)]")}>
-                Shop Now
-              </Link>
-              <Link href="#season-collection" className={buttonStyles("secondary", "bg-white px-7")}>
-                View Collection
-              </Link>
-            </div>
-            <div className="mt-10 flex items-center gap-3">
-              {heroSlides.map((entry, index) => (
-                <button
-                  key={entry.title}
-                  type="button"
-                  onClick={() => setActiveSlide(index)}
-                  aria-label={`Show banner ${index + 1}`}
-                  className={cn(
-                    "h-2.5 rounded-full transition-all duration-300",
-                    index === activeSlide ? "w-12 bg-ink" : "w-2.5 bg-black/20 hover:bg-black/40"
-                  )}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 sm:gap-5">
-            {heroProducts.map((product, index) => {
-              const pricing = getProductPricing(product);
-              return (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className={cn(
-                    "group relative overflow-hidden rounded-[24px] border border-[#f3dde2] bg-white shadow-[0_24px_55px_rgba(23,18,18,0.12)]",
-                    index === 0 && "col-span-2"
-                  )}
-                >
-                  <div className={cn("relative", index === 0 ? "aspect-[16/9]" : "aspect-[4/5]")}>
-                    <ProductImage
-                      source={getProductMainImage(product)}
-                      alt={product.productName}
-                      fallbackLabel={product.productName}
-                      imageClassName="transition duration-[350ms] ease-out group-hover:scale-[1.08]"
-                    />
-                    {pricing.isDiscounted ? (
-                      <span className="absolute left-4 top-4 rounded-full bg-ink px-3 py-1 text-xs font-black text-white">
-                        {pricing.discountPercentage}% OFF
-                      </span>
-                    ) : null}
+      <section className="relative overflow-hidden bg-[#fff7f6]">
+        <div className="relative mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+          <div className="relative overflow-hidden rounded-[28px] border border-[#f6dfe4] bg-[#fffaf9] shadow-[0_28px_70px_rgba(23,18,18,0.12)]">
+            {slides.length ? (
+              <>
+                <div className="relative aspect-[16/9] min-h-[320px] sm:min-h-[420px] lg:min-h-[560px]">
+                  <img
+                    src={currentSlide.imageUrl}
+                    alt={currentSlide.title || "Berry Clothing slider"}
+                    className="h-full w-full object-cover"
+                    loading="eager"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(23,18,18,0.78)] via-[rgba(23,18,18,0.3)] to-transparent" />
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="max-w-xl px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-14 lg:py-12">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">Berry Clothing</p>
+                      <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl lg:text-6xl">
+                        {currentSlide.title || "Discover a fresh edit"}
+                      </h1>
+                      <p className="mt-4 max-w-lg text-sm leading-7 text-white/80 sm:text-base">
+                        {currentSlide.subtitle || "A clean boutique experience with new arrivals and elevated essentials."}
+                      </p>
+                      {currentSlide.ctaLabel ? (
+                        <div className="mt-7 flex flex-wrap gap-3">
+                          <Link href={currentSlide.ctaHref || "/shop"} className={buttonStyles("primary", "px-6 shadow-[0_22px_45px_rgba(243,64,120,0.34)]")}>
+                            {currentSlide.ctaLabel}
+                          </Link>
+                          <Link href="#season-collection" className={buttonStyles("secondary", "bg-white/95 px-6 text-ink")}>Explore Collection</Link>
+                        </div>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="p-4">
-                    <p className="text-xs uppercase tracking-[0.22em] text-black/45">{product.category}</p>
-                    <p className="mt-1 font-semibold text-ink">{product.productName}</p>
-                  </div>
-                </Link>
-              );
-            })}
+                  {slides.length > 1 ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSlide((current) => (current - 1 + slides.length) % slides.length)}
+                        aria-label="Previous slide"
+                        className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl text-ink shadow-lg transition hover:bg-white"
+                      >
+                        ←
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveSlide((current) => (current + 1) % slides.length)}
+                        aria-label="Next slide"
+                        className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl text-ink shadow-lg transition hover:bg-white"
+                      >
+                        →
+                      </button>
+                      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur-sm">
+                        {slides.map((entry, index) => (
+                          <button
+                            key={entry.id}
+                            type="button"
+                            onClick={() => setActiveSlide(index)}
+                            aria-label={`Show slide ${index + 1}`}
+                            className={cn(
+                              "h-2.5 rounded-full transition-all duration-300",
+                              index === activeSlide ? "w-8 bg-white" : "w-2.5 bg-white/60 hover:bg-white"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div className="relative aspect-[16/9] min-h-[320px] bg-[radial-gradient(circle_at_top_left,_rgba(243,64,120,0.16),_transparent_42%),linear-gradient(135deg,_#fff6f6_0%,_#ffe8e0_100%)] sm:min-h-[420px] lg:min-h-[560px]" />
+            )}
           </div>
         </div>
       </section>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { AdminPage } from "@/components/admin/admin-page";
 import { PermissionGuard } from "@/components/admin/permission-guard";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
+import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
 
 type ToastState = {
@@ -170,6 +171,83 @@ export default function AdminSettingsPage() {
         [key]: value
       }
     }));
+  };
+
+  const updateHomepageSlides = (updater: (current: HomepageSliderItem[]) => HomepageSliderItem[]) => {
+    setSettings((current) => ({
+      ...current,
+      homepageSliderItems: updater(current.homepageSliderItems ?? DEFAULT_STORE_SETTINGS.homepageSliderItems ?? [])
+    }));
+  };
+
+  const addSlideFromFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    const nextSlide: HomepageSliderItem = {
+      id: `slider-${Date.now()}`,
+      imageUrl: previewUrl,
+      title: "New slide",
+      subtitle: "Add a short supporting message.",
+      ctaLabel: "Shop Now",
+      ctaHref: "/shop",
+      isActive: true,
+      order: (settings.homepageSliderItems?.length ?? 0) + 1
+    };
+
+    updateHomepageSlides((current) => [...current, nextSlide]);
+    event.target.value = "";
+  };
+
+  const removeSlide = (slideId: string) => {
+    updateHomepageSlides((current) => current.filter((slide) => slide.id !== slideId));
+  };
+
+  const toggleSlide = (slideId: string, isActive: boolean) => {
+    updateHomepageSlides((current) =>
+      current.map((slide) => (slide.id === slideId ? { ...slide, isActive } : slide))
+    );
+  };
+
+  const moveSlide = (slideId: string, direction: -1 | 1) => {
+    updateHomepageSlides((current) => {
+      const index = current.findIndex((slide) => slide.id === slideId);
+      if (index < 0) {
+        return current;
+      }
+
+      const nextIndex = index + direction;
+      if (nextIndex < 0 || nextIndex >= current.length) {
+        return current;
+      }
+
+      const reordered = [...current];
+      const [item] = reordered.splice(index, 1);
+      reordered.splice(nextIndex, 0, item);
+      return reordered.map((slide, idx) => ({ ...slide, order: idx + 1 }));
+    });
+  };
+
+  const updateSlideField = (slideId: string, field: keyof HomepageSliderItem, value: string | boolean) => {
+    updateHomepageSlides((current) =>
+      current.map((slide) => (slide.id === slideId ? { ...slide, [field]: value } : slide))
+    );
+  };
+
+  const replaceSlideImage = async (slideId: string, event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    updateHomepageSlides((current) =>
+      current.map((slide) => (slide.id === slideId ? { ...slide, imageUrl: previewUrl } : slide))
+    );
+    event.target.value = "";
   };
 
   const validateSettings = useCallback(() => {
@@ -394,6 +472,94 @@ export default function AdminSettingsPage() {
 
               <SettingsCard
                 eyebrow="Card 4"
+                title="Homepage Slider"
+                description="Upload new slides, preview them, change their order, enable or disable them, replace images, and remove outdated visuals from the homepage carousel."
+              >
+                <div className="space-y-4">
+                  <label className="flex cursor-pointer items-center justify-center rounded-2xl border border-dashed border-berry-300 bg-berry-50 px-4 py-4 text-sm font-semibold text-berry-700 transition hover:bg-berry-100">
+                    <input type="file" accept="image/*" className="hidden" onChange={addSlideFromFile} />
+                    Upload new slider image
+                  </label>
+                  <div className="grid gap-4">
+                    {(settings.homepageSliderItems ?? DEFAULT_STORE_SETTINGS.homepageSliderItems ?? []).map((slide) => (
+                      <div key={slide.id} className="rounded-[24px] border border-black/10 bg-[#fcf8f7] p-4 shadow-sm">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                          <div className="flex-1 space-y-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-black/55">
+                                Slide {slide.order}
+                              </span>
+                              <label className="flex items-center gap-2 text-sm text-ink">
+                                <input
+                                  type="checkbox"
+                                  checked={slide.isActive}
+                                  onChange={(event) => toggleSlide(slide.id, event.target.checked)}
+                                />
+                                Active
+                              </label>
+                            </div>
+                            <div className="grid gap-3 md:grid-cols-2">
+                              <Field label="Title">
+                                <input
+                                  value={slide.title ?? ""}
+                                  onChange={(event) => updateSlideField(slide.id, "title", event.target.value)}
+                                  className={inputClassName}
+                                />
+                              </Field>
+                              <Field label="CTA Label">
+                                <input
+                                  value={slide.ctaLabel ?? ""}
+                                  onChange={(event) => updateSlideField(slide.id, "ctaLabel", event.target.value)}
+                                  className={inputClassName}
+                                />
+                              </Field>
+                              <div className="md:col-span-2">
+                                <Field label="Subtitle">
+                                  <textarea
+                                    value={slide.subtitle ?? ""}
+                                    onChange={(event) => updateSlideField(slide.id, "subtitle", event.target.value)}
+                                    className={textareaClassName}
+                                  />
+                                </Field>
+                              </div>
+                              <Field label="CTA Link">
+                                <input
+                                  value={slide.ctaHref ?? ""}
+                                  onChange={(event) => updateSlideField(slide.id, "ctaHref", event.target.value)}
+                                  className={inputClassName}
+                                />
+                              </Field>
+                            </div>
+                          </div>
+                          <div className="w-full max-w-[260px] space-y-3">
+                            <div className="overflow-hidden rounded-[20px] border border-black/10 bg-white">
+                              <img src={slide.imageUrl} alt={slide.title || "Homepage slider preview"} className="h-40 w-full object-cover" />
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => moveSlide(slide.id, -1)}>
+                                Move Up
+                              </Button>
+                              <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => moveSlide(slide.id, 1)}>
+                                Move Down
+                              </Button>
+                              <label className="inline-flex cursor-pointer items-center justify-center rounded-full bg-white px-3 py-2 text-xs font-semibold text-ink ring-1 ring-black/10 transition hover:bg-berry-50">
+                                <input type="file" accept="image/*" className="hidden" onChange={(event) => replaceSlideImage(slide.id, event)} />
+                                Replace
+                              </label>
+                              <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => removeSlide(slide.id)}>
+                                Delete
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </SettingsCard>
+
+              <SettingsCard
+                eyebrow="Card 5"
                 title="Footer / Additional Settings"
                 description="Manage footer text, business notes, payment details, and policy copy without crowding the main form."
               >

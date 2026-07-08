@@ -25,7 +25,24 @@ const storeSettingsSchema = new mongoose.Schema<StoreSettings>(
     },
     businessInfo: { type: String, default: "" },
     returnPolicy: { type: String, default: "" },
-    exchangePolicy: { type: String, default: "" }
+    exchangePolicy: { type: String, default: "" },
+    homepageSliderItems: {
+      type: [
+        {
+          id: { type: String, required: true },
+          imageUrl: { type: String, default: "" },
+          title: { type: String, default: "" },
+          subtitle: { type: String, default: "" },
+          ctaLabel: { type: String, default: "" },
+          ctaHref: { type: String, default: "/shop" },
+          isActive: { type: Boolean, default: true },
+          order: { type: Number, default: 1 },
+          createdAt: { type: String, default: "" },
+          updatedAt: { type: String, default: "" }
+        }
+      ],
+      default: []
+    }
   },
   {
     timestamps: true,

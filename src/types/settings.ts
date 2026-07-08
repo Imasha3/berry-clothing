@@ -13,6 +13,8 @@ export interface BankDetails {
   branch?: string;
 }
 
+import type { HomepageSliderItem } from "@/types/homepage-slider";
+
 export interface StoreSettings {
   storeName: string;
   logo?: string;
@@ -26,4 +28,5 @@ export interface StoreSettings {
   bankDetails: BankDetails;
   returnPolicy?: string;
   exchangePolicy?: string;
+  homepageSliderItems?: HomepageSliderItem[];
 }

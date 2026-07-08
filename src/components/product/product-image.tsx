@@ -13,6 +13,7 @@ interface ProductImageProps {
   className?: string;
   imageClassName?: string;
   fallbackClassName?: string;
+  loading?: "lazy" | "eager";
 }
 
 function getInitials(label: string) {
@@ -48,7 +49,8 @@ export function ProductImage({
   fallbackLabel,
   className,
   imageClassName,
-  fallbackClassName
+  fallbackClassName,
+  loading = "lazy"
 }: ProductImageProps) {
   const resolvedSource = useMemo(() => resolveProductImageSource(source), [source]);
   const isVideo = useMemo(() => isVideoSource(source, resolvedSource), [source, resolvedSource]);
@@ -90,6 +92,8 @@ export function ProductImage({
     <img
       src={resolvedSource}
       alt={alt}
+      loading={loading}
+      decoding="async"
       onError={() => setHasError(true)}
       className={cn("h-full w-full object-cover", className, imageClassName)}
     />
