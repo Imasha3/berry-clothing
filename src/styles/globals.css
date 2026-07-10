@@ -6,6 +6,9 @@
   color-scheme: light;
   --font-manrope: "Segoe UI", Arial, sans-serif;
   --font-playfair: Georgia, "Times New Roman", serif;
+  --soft-pink-1: #fff8fb;
+  --soft-pink-2: #fff5f8;
+  --berry-500: #f34078;
 }
 
 * {
@@ -21,12 +24,28 @@ body {
   font-family: var(--font-manrope);
   font-feature-settings: "ss01" on, "cv01" on;
   letter-spacing: 0.01em;
-  background:
-    radial-gradient(circle at top left, rgba(236, 92, 137, 0.18), transparent 32%),
-    radial-gradient(circle at top right, rgba(246, 205, 214, 0.3), transparent 28%),
-    linear-gradient(180deg, #fffdfa 0%, #fff5f4 54%, #fef5ef 100%);
+  background: linear-gradient(180deg, #fffdfa 0%, #fff8fb 40%, #fff5f8 100%);
   color: #22181b;
 }
+
+.section-compact {
+  padding-top: 2.25rem; /* 36px */
+  padding-bottom: 2.25rem;
+}
+
+.card-elevated {
+  box-shadow: 0 18px 50px rgba(23,18,18,0.06);
+  border: none !important;
+}
+
+.btn-premium {
+  background: linear-gradient(90deg, rgba(243,64,120,0.98), rgba(243,64,120,0.9) 60%, rgba(255,111,152,0.9));
+  color: #fff;
+  box-shadow: 0 12px 30px rgba(243,64,120,0.12);
+}
+
+.soft-section-bg-1 { background-color: var(--soft-pink-1); }
+.soft-section-bg-2 { background-color: var(--soft-pink-2); }
 
 ::selection {
   background: rgba(243, 64, 120, 0.2);

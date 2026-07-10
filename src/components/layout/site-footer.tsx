@@ -44,8 +44,8 @@ export function SiteFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-white/10 bg-[#171212] text-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 lg:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
+    <footer className="bg-[#fff8fb] text-ink border-t border-white/[0.02]">
+      <div className="mx-auto container grid gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1.2fr_0.8fr_0.8fr] lg:px-8">
         <div>
           <Link href="/" className="inline-flex items-center gap-4">
             <Image
@@ -53,17 +53,17 @@ export function SiteFooter() {
               alt="Berry logo"
               width={500}
               height={500}
-              className="h-16 w-16 rounded-full object-cover ring-1 ring-white/20"
+              className="h-16 w-16 rounded-full object-cover ring-1 ring-white/90"
             />
             <div>
               <p className="font-display text-2xl">{settings.storeName}</p>
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#ffb6c9]">Boutique Wear</p>
             </div>
           </Link>
-          <p className="mt-5 max-w-md text-sm leading-7 text-white/64">
+          <p className="mt-4 max-w-md text-sm leading-7 text-black/60">
             {settings.description || DEFAULT_STORE_SETTINGS.description}
           </p>
-          <SocialLinksRow links={settings.socialLinks} className="mt-6" iconClassName="bg-white/95" />
+          <SocialLinksRow links={settings.socialLinks} className="mt-4" iconClassName="bg-white/95" />
         </div>
 
         <div>
@@ -86,7 +86,7 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="border-t border-white/10 px-4 py-5 text-center text-xs text-white/48 sm:px-6">
+      <div className="border-t border-white/[0.02] px-4 py-4 text-center text-xs text-black/50 sm:px-6">
         © {year} {settings.storeName}. {settings.footerText || DEFAULT_STORE_SETTINGS.footerText}
       </div>
     </footer>

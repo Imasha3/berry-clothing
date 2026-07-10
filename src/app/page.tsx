@@ -116,8 +116,8 @@ export default function HomePage() {
 
   return (
     <div className="overflow-hidden pb-20">
-      <section className="relative overflow-hidden bg-[#fff7f6]">
-        <div className="relative mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+      <section className="relative overflow-hidden soft-section-bg-1">
+        <div className="relative container px-4 py-6 sm:px-6 lg:px-8">
           <div className="relative overflow-hidden rounded-[28px] border border-[#f6dfe4] bg-[#fffaf9] shadow-[0_28px_70px_rgba(23,18,18,0.12)]">
             {slides.length ? (
               <>
@@ -194,7 +194,7 @@ export default function HomePage() {
       {/* Featured Categories removed per request */}
 
       {trendingDeals.length ? (
-        <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <section className="container px-4 section-compact sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Trending Deals"
             title="Limited time offers worth noticing"
@@ -206,7 +206,7 @@ export default function HomePage() {
         </section>
       ) : null}
 
-      <section id="season-collection" className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <section id="season-collection" className="container px-4 section-compact sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Season Collection"
           title="Fresh fashion picks styled for now"
@@ -218,7 +218,7 @@ export default function HomePage() {
       </section>
 
       {featuredProducts.length ? (
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="container px-4 section-compact sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Featured Products"
             title="Boutique pieces with extra Berry attention"
@@ -231,7 +231,7 @@ export default function HomePage() {
       ) : null}
 
       {bestSellers.length ? (
-        <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <section className="container px-4 section-compact sm:px-6 lg:px-8">
           <SectionHeading
             eyebrow="Best Sellers"
             title="The styles shoppers keep reaching for"

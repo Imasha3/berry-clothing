@@ -3,6 +3,13 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: ["./src/**/*.{js,ts,jsx,tsx,mdx}"],
   theme: {
+    container: {
+      center: true,
+      padding: "1rem",
+      screens: {
+        "2xl": "1400px"
+      }
+    },
     extend: {
       colors: {
         berry: {
@@ -21,7 +28,8 @@ const config: Config = {
         ink: "#171212"
       },
       boxShadow: {
-        soft: "0 10px 30px rgba(23, 18, 18, 0.08)"
+        soft: "0 12px 36px rgba(23, 18, 18, 0.06)",
+        elevated: "0 20px 50px rgba(23,18,18,0.08)"
       },
       fontFamily: {
         display: ["var(--font-playfair)", "serif"],

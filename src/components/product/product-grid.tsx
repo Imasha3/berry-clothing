@@ -3,7 +3,7 @@ import { ProductCard } from "@/components/product/product-card";
 
 export function ProductGrid({ products }: { products: Product[] }) {
   return (
-    <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

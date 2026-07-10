@@ -11,8 +11,8 @@ export function ProductCard({ product }: { product: Product }) {
   const isOutOfStock = product.availabilityStatus === "Out of Stock";
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden border border-[#f4dde2] bg-white/95 shadow-[0_16px_36px_rgba(23,18,18,0.08)] ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_48px_rgba(243,64,120,0.14)]">
-      <div className="relative h-[340px] overflow-hidden bg-[#fdf4f5] sm:h-[380px] lg:h-[440px]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-[18px] bg-white/100 card-elevated transition duration-300 hover:translate-y-[-4px] hover:shadow-elevated">
+      <div className="relative h-[340px] overflow-hidden bg-[#fff8fb] sm:h-[380px] lg:h-[440px] rounded-t-[18px]">
         <ProductImage
           source={getProductMainImage(product)}
           alt={product.productName}
@@ -32,11 +32,11 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-black/45">{product.category}</p>
-            <Link href={`/product/${product.id}`} className="mt-1 block text-[14px] font-semibold leading-snug text-ink transition hover:text-berry-700">
+            <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-black/45">{product.category}</p>
+            <Link href={`/product/${product.id}`} className="mt-1 block text-[15px] font-semibold leading-snug text-ink transition hover:text-berry-700">
               {product.productName}
             </Link>
           </div>
@@ -58,7 +58,7 @@ export function ProductCard({ product }: { product: Product }) {
           <p className="mt-1 text-[11px] font-semibold text-emerald-700">You save {formatCurrency(pricing.savings)}</p>
         ) : null}
 
-        <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-black/[0.04] pt-2.5">
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-black/[0.04] pt-3">
           <p className="truncate text-[12px] text-black/55">{product.material}</p>
           {isOutOfStock ? (
             <span className="shrink-0 border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold text-rose-600">
