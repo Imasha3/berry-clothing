@@ -45,6 +45,11 @@ body {
   border-radius: 0 !important;
 }
 
+/* Force utility rounded classes to be sharp rectangles */
+[class*="rounded-"], .rounded-full, .rounded-2xl, .rounded-lg, .rounded-md, .rounded-sm {
+  border-radius: 0 !important;
+}
+
 .btn-premium {
   background: linear-gradient(90deg, rgba(243,64,120,0.98), rgba(243,64,120,0.9) 60%, rgba(255,111,152,0.9));
   color: #fff;
