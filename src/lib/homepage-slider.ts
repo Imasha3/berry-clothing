@@ -1,10 +1,11 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { tmpdir } from "os";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
 
-const localHomepageSliderPath = path.join(process.cwd(), ".next-cache", "homepage-slider.json");
+const localHomepageSliderPath = path.join(tmpdir(), "berry-clothing", "homepage-slider.json");
 
 const defaultSlides: HomepageSliderItem[] = [
   {

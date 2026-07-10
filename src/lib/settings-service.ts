@@ -1,11 +1,12 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { tmpdir } from "os";
 import { connectToMongo, isMongoConfigured } from "@/lib/mongodb";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import { StoreSettingsModel } from "@/models/storeSettings";
 import type { StoreSettings } from "@/types/settings";
 
-const localSettingsPath = path.join(process.cwd(), ".next-cache", "store-settings.json");
+const localSettingsPath = path.join(tmpdir(), "berry-clothing", "store-settings.json");
 
 export function normalizeStoreSettings(settings?: Partial<StoreSettings> | null): StoreSettings {
   return {
