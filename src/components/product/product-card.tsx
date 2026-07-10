@@ -11,8 +11,8 @@ export function ProductCard({ product }: { product: Product }) {
   const isOutOfStock = product.availabilityStatus === "Out of Stock";
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-[18px] bg-white/100 card-elevated transition duration-300 hover:translate-y-[-4px] hover:shadow-elevated">
-      <div className="relative h-[340px] overflow-hidden bg-[#fff8fb] sm:h-[380px] lg:h-[440px] rounded-t-[18px]">
+    <div className="group flex h-full flex-col overflow-hidden rounded-none bg-white/100 card-elevated transition duration-300 hover:translate-y-[-4px] hover:shadow-elevated">
+      <div className="relative h-[340px] overflow-hidden bg-[#fff8fb] sm:h-[380px] lg:h-[440px] rounded-none">
         <ProductImage
           source={getProductMainImage(product)}
           alt={product.productName}

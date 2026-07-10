@@ -38,6 +38,13 @@ body {
   border: none !important;
 }
 
+/* Force rectangular corners for card-style elements */
+.card-elevated,
+.shadow-soft,
+.shadow-elevated {
+  border-radius: 0 !important;
+}
+
 .btn-premium {
   background: linear-gradient(90deg, rgba(243,64,120,0.98), rgba(243,64,120,0.9) 60%, rgba(255,111,152,0.9));
   color: #fff;
