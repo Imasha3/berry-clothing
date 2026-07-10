@@ -1,11 +1,7 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { tmpdir } from "os";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
-
-const localHomepageSliderPath = path.join(tmpdir(), "berry-clothing", "homepage-slider.json");
+import { supabaseAdmin } from "@/lib/supabase-server";
 
 const defaultSlides: HomepageSliderItem[] = [
   {
@@ -48,17 +44,23 @@ function normalizeSlides(slides?: Partial<HomepageSliderItem>[] | null): Homepag
 }
 
 async function readLocalSlides(): Promise<HomepageSliderItem[]> {
+  // read from Supabase
   try {
-    const content = await fs.readFile(localHomepageSliderPath, "utf8");
-    return normalizeSlides(JSON.parse(content) as Partial<HomepageSliderItem>[]);
+    const { data, error } = await supabaseAdmin.from("homepage_slider").select("slides").eq("id", "singleton").single();
+    if (error) {
+      return defaultSlides;
+    }
+
+    return normalizeSlides((data?.slides as Partial<HomepageSliderItem>[] ) ?? defaultSlides);
   } catch {
     return defaultSlides;
   }
 }
 
 async function writeLocalSlides(slides: HomepageSliderItem[]) {
-  await fs.mkdir(path.dirname(localHomepageSliderPath), { recursive: true });
-  await fs.writeFile(localHomepageSliderPath, JSON.stringify(slides, null, 2), "utf8");
+  // write to Supabase (upsert a singleton row)
+  const payload = { id: "singleton", slides };
+  await supabaseAdmin.from("homepage_slider").upsert(payload);
   return slides;
 }
 

@@ -1,12 +1,6 @@
-import { promises as fs } from "fs";
-import path from "path";
-import { tmpdir } from "os";
-import { connectToMongo, isMongoConfigured } from "@/lib/mongodb";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
-import { StoreSettingsModel } from "@/models/storeSettings";
 import type { StoreSettings } from "@/types/settings";
-
-const localSettingsPath = path.join(tmpdir(), "berry-clothing", "store-settings.json");
+import { supabaseAdmin } from "@/lib/supabase-server";
 
 export function normalizeStoreSettings(settings?: Partial<StoreSettings> | null): StoreSettings {
   return {
@@ -39,28 +33,26 @@ async function writeLocalSettings(settings: StoreSettings) {
 }
 
 export async function getStoreSettings() {
-  if (!isMongoConfigured()) {
-    return readLocalSettings();
-  }
+  try {
+    const { data, error } = await supabaseAdmin.from("store_settings").select("settings").eq("id", "singleton").single();
+    if (error || !data) {
+      return DEFAULT_STORE_SETTINGS;
+    }
 
-  await connectToMongo();
-  const settings = await StoreSettingsModel.findOne().lean<Partial<StoreSettings>>();
-  return normalizeStoreSettings(settings);
+    return normalizeStoreSettings(data?.settings as Partial<StoreSettings>);
+  } catch {
+    return DEFAULT_STORE_SETTINGS;
+  }
 }
 
 export async function updateStoreSettings(payload: Partial<StoreSettings>) {
   const nextSettings = normalizeStoreSettings(payload);
 
-  if (!isMongoConfigured()) {
-    return writeLocalSettings(nextSettings);
+  try {
+    const payloadRow = { id: "singleton", settings: nextSettings };
+    await supabaseAdmin.from("store_settings").upsert(payloadRow);
+    return nextSettings;
+  } catch {
+    return nextSettings;
   }
-
-  await connectToMongo();
-  const settings = await StoreSettingsModel.findOneAndUpdate({}, nextSettings, {
-    new: true,
-    upsert: true,
-    setDefaultsOnInsert: true
-  }).lean<Partial<StoreSettings>>();
-
-  return normalizeStoreSettings(settings);
 }
