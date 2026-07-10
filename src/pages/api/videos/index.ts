@@ -1,31 +1,17 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import nextConnect from "next-connect";
 import multer from "multer";
-import path from "path";
-import os from "os";
-import { listCloudinaryVideos, uploadVideoToCloudinary } from "@/lib/cloudinary-server";
+import { listCloudinaryVideos, uploadBufferToCloudinary } from "@/lib/cloudinary-server";
 
 interface VideoUploadRequest extends NextApiRequest {
   file?: Express.Multer.File;
 }
 
-const uploadDir = path.join(os.tmpdir(), "berry-clothing-videos");
-
-const storage = multer.diskStorage({
-  destination: async (_req, _file, cb) => {
-    await import("fs").then((fs) => fs.promises.mkdir(uploadDir, { recursive: true }));
-    cb(null, uploadDir);
-  },
-  filename: (_req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage,
-  limits: {
-    fileSize: 1024 * 1024 * 250
-  },
+  limits: { fileSize: 1024 * 1024 * 250 },
   fileFilter: (_req, file, cb) => {
     if (!file.mimetype.startsWith("video/")) {
       cb(new Error("Only video files are allowed."));
@@ -60,7 +46,9 @@ apiRoute.post(async (req, res) => {
   }
 
   try {
-    const uploadResponse = await uploadVideoToCloudinary(file.path, title);
+    // upload directly from memory buffer to Cloudinary
+    const filename = file.originalname || `upload-${Date.now()}`;
+    const uploadResponse = await uploadBufferToCloudinary(file.buffer as Buffer, filename, "video");
 
     const video = {
       id: uploadResponse.public_id,
@@ -74,8 +62,6 @@ apiRoute.post(async (req, res) => {
     return res.status(201).json(video);
   } catch (error) {
     return res.status(500).json({ error: error instanceof Error ? error.message : "Upload failed." });
-  } finally {
-    await import("fs").then((fs) => fs.promises.unlink(req.file?.path || "").catch(() => undefined));
   }
 });
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
+import { uploadCloudinaryAsset } from "@/lib/cloudinary";
 
 type ToastState = {
   tone: "success" | "error";
@@ -186,9 +187,10 @@ export default function AdminSettingsPage() {
       return;
     }
 
+    const tempId = `slider-${Date.now()}`;
     const previewUrl = URL.createObjectURL(file);
     const nextSlide: HomepageSliderItem = {
-      id: `slider-${Date.now()}`,
+      id: tempId,
       imageUrl: previewUrl,
       title: "New slide",
       subtitle: "Add a short supporting message.",
@@ -200,6 +202,15 @@ export default function AdminSettingsPage() {
 
     updateHomepageSlides((current) => [...current, nextSlide]);
     event.target.value = "";
+
+    try {
+      const response = await uploadCloudinaryAsset(file);
+      const secureUrl = response.secure_url;
+      updateHomepageSlides((current) => current.map((s) => (s.id === tempId ? { ...s, imageUrl: secureUrl } : s)));
+    } catch (err) {
+      // Keep preview if upload fails; user can retry
+      console.error("Cloudinary upload failed", err);
+    }
   };
 
   const removeSlide = (slideId: string) => {
@@ -248,6 +259,14 @@ export default function AdminSettingsPage() {
       current.map((slide) => (slide.id === slideId ? { ...slide, imageUrl: previewUrl } : slide))
     );
     event.target.value = "";
+
+    try {
+      const response = await uploadCloudinaryAsset(file);
+      const secureUrl = response.secure_url;
+      updateHomepageSlides((current) => current.map((s) => (s.id === slideId ? { ...s, imageUrl: secureUrl } : s)));
+    } catch (err) {
+      console.error("Cloudinary upload failed", err);
+    }
   };
 
   const validateSettings = useCallback(() => {

@@ -18,17 +18,12 @@ export function normalizeStoreSettings(settings?: Partial<StoreSettings> | null)
 }
 
 async function readLocalSettings() {
-  try {
-    const content = await fs.readFile(localSettingsPath, "utf8");
-    return normalizeStoreSettings(JSON.parse(content) as Partial<StoreSettings>);
-  } catch {
-    return DEFAULT_STORE_SETTINGS;
-  }
+  // filesystem storage removed; kept for API compatibility if needed
+  return DEFAULT_STORE_SETTINGS;
 }
 
 async function writeLocalSettings(settings: StoreSettings) {
-  await fs.mkdir(path.dirname(localSettingsPath), { recursive: true });
-  await fs.writeFile(localSettingsPath, JSON.stringify(settings, null, 2), "utf8");
+  // filesystem storage removed; no-op
   return settings;
 }
 

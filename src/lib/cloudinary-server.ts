@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { Readable } from "stream";
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dycqf6xbh";
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
@@ -26,6 +27,26 @@ export async function uploadVideoToCloudinary(filePath: string, filename: string
     folder: VIDEO_FOLDER,
     public_id: filename.replace(/\.[^/.]+$/, ""),
     display_name: filename.replace(/\.[^/.]+$/, "")
+  });
+}
+
+export async function uploadBufferToCloudinary(buffer: Buffer, filename: string, resourceType: "video" | "image" = "image") {
+  assertCloudinaryCredentials();
+
+  return new Promise<any>((resolve, reject) => {
+    const options: Record<string, any> = {
+      resource_type: resourceType,
+      folder: resourceType === "video" ? VIDEO_FOLDER : PRODUCT_FOLDER,
+      public_id: filename.replace(/\.[^/.]+$/, ""),
+      display_name: filename.replace(/\.[^/.]+$/, "")
+    };
+
+    const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    });
+
+    Readable.from([buffer]).pipe(uploadStream);
   });
 }
 
