@@ -29,8 +29,22 @@ function mergeSettings(settings: StoreSettings): StoreSettings {
   };
 }
 
+const categoryImages: Record<string, string> = {
+  "Tops": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+  "T-shirts": "https://images.unsplash.com/photo-1554568218-0f1715e72254?auto=format&fit=crop&w=800&q=80",
+  "Frocks": "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=800&q=80",
+  "Full dress": "https://images.unsplash.com/photo-1612336307429-8a898d10e223?auto=format&fit=crop&w=800&q=80"
+};
+
 export default function HomePage() {
-  const { products } = useCommerceStore();
+  const { products, activeCategories } = useCommerceStore();
+  const featuredCategories = useMemo(
+    () =>
+      ["Tops", "T-shirts", "Frocks", "Full dress"]
+        .map((name) => activeCategories.find((category) => category.name === name))
+        .filter((category): category is NonNullable<(typeof activeCategories)[number]> => Boolean(category)),
+    [activeCategories]
+  );
   const [activeSlide, setActiveSlide] = useState(0);
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [slides, setSlides] = useState<HomepageSliderItem[]>([]);
@@ -176,6 +190,46 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {featuredCategories.length ? (
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <SectionHeading
+            eyebrow="Featured Categories"
+            title="Shop the Berry collections you love most"
+            description="Browse the current Berry Clothing categories through a cleaner, more polished boutique experience."
+          />
+          <div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {featuredCategories.map((category, index) => (
+              <Link
+                key={category.id}
+                href={`/shop?category=${encodeURIComponent(category.name)}`}
+                className="group flex flex-col overflow-hidden rounded-[30px] border border-[#eed8dc] bg-white/90 shadow-[0_22px_45px_rgba(44,24,33,0.08)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_55px_rgba(44,24,33,0.12)] h-full"
+              >
+                <div className="relative aspect-[4/3.2] w-full overflow-hidden bg-[#fdf4f5]">
+                  <img
+                    src={categoryImages[category.name] || "/berry-logo.jpeg"}
+                    alt={category.name}
+                    className="h-full w-full object-cover transition duration-[350ms] ease-out group-hover:scale-[1.05]"
+                  />
+                </div>
+                <div className="flex flex-1 flex-col pt-7 pb-9 px-6 sm:px-8">
+                  <div className="flex items-start justify-between gap-4">
+                    <span className="inline-flex rounded-full bg-[#ffe8ee] px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-berry-700">
+                      {category.name}
+                    </span>
+                    <span className="text-lg font-semibold text-berry-500">0{index + 1}</span>
+                  </div>
+                  <h3 className="mt-5 font-display text-2xl text-ink leading-tight">{category.name}</h3>
+                  <p className="mt-3.5 flex-1 text-sm leading-7 text-black/60">
+                    {category.description || "Berry Clothing essentials curated for easier browsing and everyday styling."}
+                  </p>
+                  <p className="mt-6 text-sm font-semibold text-berry-700">Explore Collection</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {trendingDeals.length ? (
         <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">

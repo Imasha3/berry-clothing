@@ -12,13 +12,13 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <div className="group flex h-full flex-col overflow-hidden border border-[#f4dde2] bg-white/95 shadow-[0_16px_36px_rgba(23,18,18,0.08)] ring-1 ring-black/5 transition duration-300 hover:-translate-y-1 hover:shadow-[0_22px_48px_rgba(243,64,120,0.14)]">
-      <div className="relative aspect-[4/4.2] overflow-hidden bg-[#fdf4f5]">
+      <div className="relative h-[280px] overflow-hidden bg-[#fdf4f5] sm:h-[320px] lg:h-[360px]">
         <ProductImage
           source={getProductMainImage(product)}
           alt={product.productName}
           fallbackLabel={product.productName}
           loading="lazy"
-          className="rounded-none"
+          className="h-full w-full rounded-none"
           imageClassName={`transition duration-[350ms] ease-out group-hover:scale-[1.05] ${isOutOfStock ? "grayscale" : ""}`}
         />
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">

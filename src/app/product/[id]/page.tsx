@@ -108,12 +108,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           {(productImages.length > 0 ? productImages : [null]).map((image, index) => (
             <div
               key={image?.previewUrl || image?.url || `placeholder-${index}`}
-              className="relative aspect-[4/5] overflow-hidden rounded-[28px] bg-white shadow-soft ring-1 ring-black/5"
+              className="relative h-[320px] overflow-hidden rounded-[28px] bg-white shadow-soft ring-1 ring-black/5 sm:h-[380px] lg:h-[440px]"
             >
               <ProductImage
                 source={image}
                 alt={image?.alt || product.productName}
                 fallbackLabel={product.productName}
+                className="h-full w-full"
               />
               {image && getProductMainImage(product) === (image.previewUrl || image.url) ? (
                 <span className="absolute left-4 top-4 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-white">

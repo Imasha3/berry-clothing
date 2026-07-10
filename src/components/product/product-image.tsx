@@ -95,7 +95,7 @@ export function ProductImage({
       loading={loading}
       decoding="async"
       onError={() => setHasError(true)}
-      className={cn("h-full w-full object-cover", className, imageClassName)}
+      className={cn("h-full w-full object-cover object-center", className, imageClassName)}
     />
   );
 }
