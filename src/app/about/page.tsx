@@ -50,8 +50,8 @@ export default function AboutPage() {
             className="h-20 w-20 rounded-full object-cover ring-1 ring-white/20"
           />
           <p className="mt-8 text-xs font-semibold uppercase tracking-[0.32em] text-[#ffb6c9]">Our Story</p>
-          <h1 className="mt-3 font-display text-5xl leading-tight">About {settings.storeName}</h1>
-          <p className="mt-5 max-w-xl text-sm leading-7 text-white/72">
+          <h1 className="mt-3 font-display text-5xl font-light leading-tight">About {settings.storeName}</h1>
+          <p className="mt-5 max-w-xl text-sm leading-7 text-white/72 font-body font-light">
             Berry Clothing is a Sri Lankan fashion store built around stylish everyday pieces, customer trust,
             and a warm social shopping experience. The brand brings together trendy designs, wearable fits,
             and accessible prices for shoppers who want polished fashion without fuss.
@@ -66,11 +66,11 @@ export default function AboutPage() {
           }}
         />
       </section>
-
+ 
       <section className="grid gap-6 py-12 md:grid-cols-2">
         <div className="rounded-[8px] bg-white p-7 shadow-soft ring-1 ring-black/5">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-berry-700">Our Mission</p>
-          <h2 className="mt-3 font-display text-4xl text-ink">Fashion that feels current, comfortable, and attainable.</h2>
+          <h2 className="mt-3 font-display text-4xl font-light text-ink">Fashion that feels current, comfortable, and attainable.</h2>
           <p className="mt-4 text-sm leading-7 text-black/64">
             We focus on affordable fashion, quality clothing, and trendy styles that work for real wardrobes.
             Every collection is selected to feel fresh, feminine, and easy to style.

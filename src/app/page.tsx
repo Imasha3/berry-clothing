@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { SectionHeading } from "@/components/common/section-heading";
-import { SocialLinksRow } from "@/components/common/social-links";
+import { TestimonialSlider } from "@/components/common/testimonial-slider";
 import { ProductGrid } from "@/components/product/product-grid";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { buttonStyles } from "@/components/ui/button";
@@ -116,79 +116,100 @@ export default function HomePage() {
 
   return (
     <div className="overflow-hidden pb-20">
-      <section className="relative overflow-hidden soft-section-bg-1">
-        <div className="relative container px-4 py-6 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden rounded-[28px] border border-[#f6dfe4] bg-[#fffaf9] shadow-[0_28px_70px_rgba(23,18,18,0.12)]">
-            {slides.length ? (
-              <>
-                <div className="relative aspect-[16/9] min-h-[320px] sm:min-h-[420px] lg:min-h-[560px]">
+      <section className="relative overflow-hidden w-full h-[60vh] sm:h-[75vh] lg:h-[88vh] bg-ink">
+        {slides.length ? (
+          <>
+            <div className="relative w-full h-full">
+              {slides.map((slide, index) => (
+                <div
+                  key={slide.id}
+                  className={cn(
+                    "absolute inset-0 transition-opacity duration-1000 ease-in-out",
+                    index === activeSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+                  )}
+                >
                   <img
-                    src={currentSlide.imageUrl}
-                    alt={currentSlide.title || "Berry Clothing slider"}
+                    src={slide.imageUrl}
+                    alt={slide.title || "Berry Clothing slider"}
                     className="h-full w-full object-cover"
                     loading="eager"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-r from-[rgba(23,18,18,0.78)] via-[rgba(23,18,18,0.3)] to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/35 to-transparent" />
                   <div className="absolute inset-0 flex items-center">
-                    <div className="max-w-xl px-6 py-8 text-white sm:px-10 sm:py-10 lg:px-14 lg:py-12">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-white/80">Berry Clothing</p>
-                      <h1 className="mt-3 font-display text-3xl leading-tight sm:text-4xl lg:text-6xl">
-                        {currentSlide.title || "Discover a fresh edit"}
-                      </h1>
-                      <p className="mt-4 max-w-lg text-sm leading-7 text-white/80 sm:text-base">
-                        {currentSlide.subtitle || "A clean boutique experience with new arrivals and elevated essentials."}
+                    <div className="container mx-auto px-6 sm:px-12 lg:px-20 text-white max-w-4xl">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-white/90">
+                        Berry Clothing
                       </p>
-                      {currentSlide.ctaLabel ? (
-                        <div className="mt-7 flex flex-wrap gap-3">
-                          <Link href={currentSlide.ctaHref || "/shop"} className={buttonStyles("primary", "px-6 shadow-[0_22px_45px_rgba(243,64,120,0.34)]")}>
-                            {currentSlide.ctaLabel}
+                      <h1 className="mt-4 font-display text-4xl leading-tight font-light tracking-wide sm:text-5xl lg:text-7xl">
+                        {slide.title || "Discover a fresh edit"}
+                      </h1>
+                      <p className="mt-5 max-w-xl text-sm leading-relaxed text-white/80 sm:text-base font-body font-light">
+                        {slide.subtitle || "A clean boutique experience with new arrivals and elevated essentials."}
+                      </p>
+                      {slide.ctaLabel ? (
+                        <div className="mt-8 flex flex-wrap gap-4">
+                          <Link
+                            href={slide.ctaHref || "/shop"}
+                            className="inline-flex items-center justify-center border border-white bg-white px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-ink transition-all duration-300 hover:bg-transparent hover:text-white"
+                          >
+                            {slide.ctaLabel}
                           </Link>
-                          <Link href="#season-collection" className={buttonStyles("secondary", "bg-white/95 px-6 text-ink")}>Explore Collection</Link>
+                          <Link
+                            href="#season-collection"
+                            className="inline-flex items-center justify-center border border-white bg-transparent px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:bg-white hover:text-ink"
+                          >
+                            Explore Collection
+                          </Link>
                         </div>
                       ) : null}
                     </div>
                   </div>
-                  {slides.length > 1 ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => setActiveSlide((current) => (current - 1 + slides.length) % slides.length)}
-                        aria-label="Previous slide"
-                        className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl text-ink shadow-lg transition hover:bg-white"
-                      >
-                        ←
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setActiveSlide((current) => (current + 1) % slides.length)}
-                        aria-label="Next slide"
-                        className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-xl text-ink shadow-lg transition hover:bg-white"
-                      >
-                        →
-                      </button>
-                      <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-black/20 px-3 py-2 backdrop-blur-sm">
-                        {slides.map((entry, index) => (
-                          <button
-                            key={entry.id}
-                            type="button"
-                            onClick={() => setActiveSlide(index)}
-                            aria-label={`Show slide ${index + 1}`}
-                            className={cn(
-                              "h-2.5 rounded-full transition-all duration-300",
-                              index === activeSlide ? "w-8 bg-white" : "w-2.5 bg-white/60 hover:bg-white"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : null}
                 </div>
-              </>
-            ) : (
-              <div className="relative aspect-[16/9] min-h-[320px] bg-[radial-gradient(circle_at_top_left,_rgba(243,64,120,0.16),_transparent_42%),linear-gradient(135deg,_#fff6f6_0%,_#ffe8e0_100%)] sm:min-h-[420px] lg:min-h-[560px]" />
-            )}
-          </div>
-        </div>
+              ))}
+
+              {slides.length > 1 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSlide((current) => (current - 1 + slides.length) % slides.length)}
+                    aria-label="Previous slide"
+                    className="absolute left-6 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center border border-white/20 bg-black/10 text-white transition hover:bg-white hover:text-ink hover:border-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveSlide((current) => (current + 1) % slides.length)}
+                    aria-label="Next slide"
+                    className="absolute right-6 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center border border-white/20 bg-black/10 text-white transition hover:bg-white hover:text-ink hover:border-white"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="h-5 w-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                    </svg>
+                  </button>
+                  <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3">
+                    {slides.map((entry, index) => (
+                      <button
+                        key={entry.id}
+                        type="button"
+                        onClick={() => setActiveSlide(index)}
+                        aria-label={`Show slide ${index + 1}`}
+                        className={cn(
+                          "h-[2px] transition-all duration-300",
+                          index === activeSlide ? "w-10 bg-white" : "w-4 bg-white/40 hover:bg-white"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </>
+              ) : null}
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-full bg-[radial-gradient(circle_at_top_left,_rgba(243,64,120,0.16),_transparent_42%),linear-gradient(135deg,_#fff6f6_0%,_#ffe8e0_100%)]" />
+        )}
       </section>
 
       {/* Featured Categories removed per request */}
@@ -251,23 +272,6 @@ export default function HomePage() {
 
       <LatestFashionVideos />
 
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="grid gap-8 rounded-[28px] border border-[#ead4d8] bg-white p-7 shadow-[0_24px_60px_rgba(23,18,18,0.08)] md:grid-cols-[1.1fr_0.9fr] md:p-10">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-berry-700">Follow Us</p>
-            <h2 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">
-              Stay close to Berry drops, videos, offers, and outfit inspiration.
-            </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-black/62">
-              Connect with {settings.storeName} on social media for the latest launches and customer updates.
-            </p>
-          </div>
-          <div className="flex items-center md:justify-end">
-            <SocialLinksRow links={socialLinks} showText />
-          </div>
-        </div>
-      </section>
-
       {reviews.length ? (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <SectionHeading
@@ -275,15 +279,7 @@ export default function HomePage() {
             title="Trusted by shoppers who found Berry online"
             description="A few real product notes that support the polished, social-first Berry storefront."
           />
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
-            {reviews.map((review) => (
-              <div key={review.id} className="rounded-[8px] border border-[#ead4d8] bg-white p-6 shadow-soft">
-                <p className="text-berry-600">{Array.from({ length: review.rating }).map(() => "*").join(" ")}</p>
-                <p className="mt-4 text-sm leading-7 text-black/65">&quot;{review.comment}&quot;</p>
-                <p className="mt-5 text-sm font-semibold text-ink">{review.customerName}</p>
-              </div>
-            ))}
-          </div>
+          <TestimonialSlider reviews={reviews} />
         </section>
       ) : null}
     </div>

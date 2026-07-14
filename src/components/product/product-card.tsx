@@ -36,7 +36,7 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="flex items-start justify-between gap-2.5">
           <div className="min-w-0">
             <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-black/45">{product.category}</p>
-            <Link href={`/product/${product.id}`} className="mt-1 block text-[15px] font-semibold leading-snug text-ink transition hover:text-berry-700">
+            <Link href={`/product/${product.id}`} className="mt-1 block font-display text-[17px] font-light leading-snug text-ink transition hover:text-berry-700">
               {product.productName}
             </Link>
           </div>

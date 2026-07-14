@@ -32,7 +32,8 @@ const config: Config = {
         elevated: "0 20px 50px rgba(23,18,18,0.08)"
       },
       fontFamily: {
-        display: ["var(--font-playfair)", "serif"],
+        display: ["var(--font-cormorant)", "var(--font-playfair)", "serif"],
+        bodoni: ["var(--font-bodoni)", "serif"],
         body: ["var(--font-manrope)", "sans-serif"]
       },
       backgroundImage: {

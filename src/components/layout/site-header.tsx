@@ -33,7 +33,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-[#f3dee4] bg-white/95 backdrop-blur-xl shadow-sm">
       <div className="mx-auto flex h-[78px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/" className="flex items-center">
           <Image
             src="/berry-logo.jpeg"
             alt="Berry logo"
@@ -42,10 +42,6 @@ export function SiteHeader() {
             priority
             className="h-12 w-auto rounded-none ring-1 ring-[#f5d3dd] sm:h-14"
           />
-          <div className="hidden sm:block">
-            <p className="font-display text-xl text-ink">{settings.storeName}</p>
-            <p className="text-xs uppercase tracking-[0.24em] text-berry-700">Boutique Wear</p>
-          </div>
         </Link>
 
         <nav className="hidden flex-1 items-center justify-center gap-10 text-sm font-medium tracking-tight text-black/80 md:flex">
