@@ -3,7 +3,6 @@ import { ProductImage } from "@/components/product/product-image";
 import { Badge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
 import { getProductMainImage, getProductPricing } from "@/lib/product";
-import { formatCurrency } from "@/lib/utils";
 import type { Product } from "@/types/product";
 
 export function ProductCard({ product }: { product: Product }) {
@@ -11,63 +10,59 @@ export function ProductCard({ product }: { product: Product }) {
   const isOutOfStock = product.availabilityStatus === "Out of Stock";
 
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-none bg-white/100 card-elevated transition duration-300 hover:translate-y-[-4px] hover:shadow-elevated">
-      <div className="relative h-[340px] overflow-hidden bg-[#fff8fb] sm:h-[380px] lg:h-[440px] rounded-none">
+    <div className="group flex h-full flex-col overflow-hidden rounded-none bg-white card-elevated transition duration-300 hover:-translate-y-1 hover:shadow-elevated">
+      <Link
+        href={`/product/${product.id}`}
+        className="relative block h-[340px] overflow-hidden bg-[#fff8fb] sm:h-[380px] lg:h-[440px]"
+      >
         <ProductImage
           source={getProductMainImage(product)}
           alt={product.productName}
           fallbackLabel={product.productName}
           loading="lazy"
-          className="h-full w-full rounded-none"
-          imageClassName={`transition duration-[350ms] ease-out group-hover:scale-[1.05] ${isOutOfStock ? "grayscale" : ""}`}
+          className="h-full w-full"
+          imageClassName={`transition duration-[350ms] ease-out group-hover:scale-[1.05] ${
+            isOutOfStock ? "grayscale" : ""
+          }`}
         />
+
         <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          {product.isNewArrival ? <Badge>New</Badge> : null}
-          {product.isSaleItem ? <Badge tone="warning">Sale</Badge> : null}
-          {isOutOfStock ? <Badge tone="danger">Out of Stock</Badge> : null}
+          {product.isNewArrival && <Badge>New</Badge>}
+          {product.isSaleItem && <Badge tone="warning">Sale</Badge>}
+          {isOutOfStock && <Badge tone="danger">Out of Stock</Badge>}
         </div>
-        {pricing.isDiscounted ? (
+
+        {pricing.isDiscounted && (
           <div className="absolute right-3 top-3 rounded-full bg-[#171212] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-soft">
             {pricing.discountPercentage}% OFF
           </div>
-        ) : null}
-      </div>
+        )}
+      </Link>
+
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-2.5">
-          <div className="min-w-0">
-            <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-black/45">{product.category}</p>
-            <Link href={`/product/${product.id}`} className="mt-1 block font-display text-[17px] font-light leading-snug text-ink transition hover:text-berry-700">
-              {product.productName}
-            </Link>
-          </div>
-          {pricing.isDiscounted ? (
-            <span className="bg-berry-50 px-2 py-1 text-[10px] font-semibold text-berry-700">
-              Save {pricing.discountPercentage}%
-            </span>
-          ) : null}
-        </div>
+        <p className="text-[12px] font-medium uppercase tracking-[0.18em] text-black/45">
+          {product.category}
+        </p>
 
-        <div className="mt-2 flex items-center gap-2">
-          <span className="text-[13px] font-semibold text-berry-700">{formatCurrency(pricing.discountedPrice)}</span>
-          {pricing.isDiscounted ? (
-            <span className="text-[12px] text-black/40 line-through">{formatCurrency(pricing.originalPrice)}</span>
-          ) : null}
-        </div>
+        <Link
+          href={`/product/${product.id}`}
+          className="mt-2 block font-display text-[18px] leading-snug text-ink transition hover:text-berry-700"
+        >
+          {product.productName}
+        </Link>
 
-        {pricing.isDiscounted ? (
-          <p className="mt-1 text-[11px] font-semibold text-emerald-700">You save {formatCurrency(pricing.savings)}</p>
-        ) : null}
-
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-black/[0.04] pt-3">
-          <p className="truncate text-[12px] text-black/55">{product.material}</p>
+        <div className="mt-4 border-t border-black/5 pt-4">
           {isOutOfStock ? (
-            <span className="shrink-0 border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold text-rose-600">
+            <span className="block w-full rounded-md border border-rose-200 bg-rose-50 py-3 text-center text-sm font-semibold text-rose-600">
               Out of Stock
             </span>
           ) : (
             <Link
               href={`/product/${product.id}`}
-              className={buttonStyles("primary", "px-4 py-2 text-[11px] shadow-[0_12px_24px_rgba(243,64,120,0.2)]")}
+              className={buttonStyles(
+                "primary",
+                "block w-full py-3 text-center text-sm"
+              )}
             >
               Buy Now
             </Link>
