@@ -51,7 +51,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.productName}
         </Link>
 
-        <div className="mt-4 border-t border-black/5 pt-4">
+        <div className="mt-auto border-t border-black/5 pt-4">
           {isOutOfStock ? (
             <span className="block w-full rounded-md border border-rose-200 bg-rose-50 py-3 text-center text-sm font-semibold text-rose-600">
               Out of Stock

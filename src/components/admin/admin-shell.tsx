@@ -26,7 +26,7 @@ export function AdminShell({ children }: PropsWithChildren) {
   return (
     <div className="min-h-screen bg-[#fcf6f2]">
       <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[280px_1fr]">
-        <aside className="border-r border-black/5 bg-[#171212] p-6 text-white">
+        <aside className="sticky top-0 h-screen border-r border-black/5 bg-[#171212] p-6 text-white overflow-y-auto scrollbar-thin scroll-smooth">
           <Link href="/admin/dashboard" className="block rounded-[24px] bg-white px-4 py-4">
             <Image
               src="/berry-logo.jpeg"

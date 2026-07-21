@@ -4,11 +4,11 @@ import { useMemo, useState } from "react";
 import { AdminPage } from "@/components/admin/admin-page";
 import { PermissionGuard } from "@/components/admin/permission-guard";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
-import { useAdminSession } from "@/components/providers/admin-session-provider";
+import { useAdminSession, hashPassword } from "@/components/providers/admin-session-provider";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Permission } from "@/types/permission";
-import type { Role, RoleKey } from "@/types/user";
+import type { Role, RoleKey, AdminUser } from "@/types/user";
 
 /* ─────────────────────────────────────────────
    PERMISSION → DISPLAY MAP
@@ -309,85 +309,52 @@ function RoleCard({
   role,
   onEdit,
   canEdit,
+  onView,
 }: {
   role: Role;
   onEdit: () => void;
   canEdit: boolean;
+  onView: () => void;
 }) {
-  const groups = buildPermissionGroups(role.permissions);
-  const uniqueGroupCount = groups.length;
-
   return (
-    <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_4px_16px_rgba(23,18,18,0.06)] ring-1 ring-black/[0.05] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(23,18,18,0.08)]">
+    <div
+      onClick={onView}
+      className="cursor-pointer overflow-hidden rounded-[24px] bg-white p-6 shadow-[0_4px_16px_rgba(23,18,18,0.06)] ring-1 ring-black/[0.05] transition-all duration-300 hover:shadow-[0_8px_32px_rgba(23,18,18,0.08)] hover:-translate-y-0.5 group"
+    >
       {/* Card header with role title */}
-      <div className="border-b border-black/[0.05] px-6 py-5 bg-gradient-to-r from-[#fdfaf8] to-white">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-black/40">Access Role</p>
-            <h3 className="mt-2 text-lg font-semibold text-[#3d3d50]">{role.name}</h3>
-            <p className="mt-2 text-sm leading-relaxed text-black/50">{role.description}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">Access Role</p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-600/10">
+              <span className="h-1 w-1 rounded-full bg-emerald-500" />
+              Active
+            </span>
           </div>
-          {canEdit && (
-            <button
-              onClick={onEdit}
-              className="shrink-0 inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] bg-[#9d7d6a] text-white transition-all duration-200 hover:bg-[#8a6d5c] shadow-[0_2px_8px_rgba(157,125,106,0.25)]"
-            >
-              Edit
-            </button>
-          )}
+          <h3 className="mt-2 text-lg font-semibold text-[#3d3d50]">{role.name}</h3>
+          <p className="mt-2 text-sm leading-relaxed text-black/50 line-clamp-2">{role.description}</p>
         </div>
+        {canEdit && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="shrink-0 inline-flex items-center gap-2 rounded-[12px] px-4 py-2 text-xs font-semibold uppercase tracking-[0.1em] bg-[#9d7d6a] text-white transition-all duration-200 hover:bg-[#8a6d5c] shadow-[0_2px_8px_rgba(157,125,106,0.25)]"
+          >
+            Edit
+          </button>
+        )}
       </div>
-
-      {/* Permission groups display */}
-      <div className="space-y-4 px-6 py-5">
-        {groups.map(({ groupKey, permissions }) => {
-          const config = MODULE_GROUPS[groupKey];
-          return (
-            <div key={groupKey} className="border-l-2 pl-3.5" style={{ borderColor: config?.accentClass?.split('[#')[1]?.slice(0, -1) ? `#${config?.accentClass?.split('[#')[1]?.slice(0, -1)}` : 'transparent' }}>
-              <div className="flex items-center gap-2 mb-2.5">
-                <span className={cn("flex h-7 w-7 items-center justify-center rounded-[8px] text-sm", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
-                  <span className={config?.accentClass ?? "text-black/40"}>{config?.icon}</span>
-                </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/50">
-                  {config?.label ?? groupKey}
-                </p>
-                <span className="ml-auto text-xs font-medium text-black/30">
-                  {permissions.length} {permissions.length === 1 ? 'privilege' : 'privileges'}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5 ml-0.5">
-                {permissions.map((perm) => {
-                  const display = PERMISSION_DISPLAY[perm];
-                  if (!display) return null;
-                  const color = ACTION_COLORS[display.action] ?? ACTION_COLORS.Manage;
-                  return (
-                    <span
-                      key={perm}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1",
-                        color
-                      )}
-                      title={display.description || display.label}
-                    >
-                      <span className="h-1 w-1 rounded-full bg-current opacity-70" />
-                      <span className="max-w-[150px] truncate">{display.label}</span>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
-        
-        {/* Stats footer */}
-        <div className="pt-3 mt-3 border-t border-black/[0.05]">
-          <div className="flex items-center justify-between text-xs">
-            <p className="text-black/40">
-              <span className="font-semibold text-black/60">{uniqueGroupCount}</span> modules • 
-              <span className="font-semibold text-black/60 ml-1">{role.permissions.length}</span> privileges
-            </p>
-          </div>
-        </div>
+      
+      {/* Stats footer */}
+      <div className="mt-5 pt-4 border-t border-black/[0.05] flex items-center justify-between text-xs text-black/40">
+        <p className="font-semibold text-[#9d7d6a]">
+          {role.permissions.length} {role.permissions.length === 1 ? 'privilege' : 'privileges'}
+        </p>
+        <span className="text-black/35 group-hover:translate-x-1 transition-transform duration-200">
+          Click to view privileges →
+        </span>
       </div>
     </div>
   );
@@ -415,10 +382,20 @@ const initialFormState: RoleFormState = {
    PAGE COMPONENT
 ───────────────────────────────────────────── */
 export default function AdminRolesPage() {
-  const { roles, permissions, addRole, updateRole, addActivityLog } = useCommerceStore();
+  const { roles, permissions, addRole, updateRole, addActivityLog, users, addUser } = useCommerceStore();
   const { currentUser, hasPermission } = useAdminSession();
   const [formState, setFormState] = useState<RoleFormState>(initialFormState);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [selectedRoleForView, setSelectedRoleForView] = useState<Role | null>(null);
+  const [createUserAccount, setCreateUserAccount] = useState(false);
+  const [userData, setUserData] = useState({
+    fullName: "",
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "admin" as RoleKey
+  });
 
   // Build the unique permission list from the store (typed)
   const allPermissions = useMemo(
@@ -459,6 +436,33 @@ export default function AdminRolesPage() {
       return;
     }
 
+    // Additional User Account validations if checkbox checked
+    if (!formState.id && createUserAccount) {
+      if (!userData.fullName.trim() || !userData.username.trim() || !userData.email.trim() || !userData.password) {
+        setFeedback({ type: "error", message: "Please complete all user account fields." });
+        return;
+      }
+      if (userData.password !== userData.confirmPassword) {
+        setFeedback({ type: "error", message: "Password and confirm password must match." });
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userData.email.trim())) {
+        setFeedback({ type: "error", message: "Please enter a valid email address." });
+        return;
+      }
+
+      // Check duplicates
+      const dup = users.find(
+        (u) =>
+          u.email.toLowerCase() === userData.email.trim().toLowerCase() ||
+          u.username.toLowerCase() === userData.username.trim().toLowerCase()
+      );
+      if (dup) {
+        setFeedback({ type: "error", message: "Username or email is already in use by another account." });
+        return;
+      }
+    }
+
     const now = new Date().toISOString();
 
     if (formState.id) {
@@ -490,10 +494,60 @@ export default function AdminRolesPage() {
         action: "Role created",
         target: role.name,
       });
+
+      // User account creation if toggled
+      if (createUserAccount) {
+        const hashed = await hashPassword(userData.password);
+        const nextUserId = `usr-${Date.now()}-${userData.email.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 18)}`;
+        
+        // helper to get initials for avatar
+        const buildAvatar = (name: string) => {
+          return name
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part[0]?.toUpperCase() ?? "")
+            .join("");
+        };
+
+        const nextUser: AdminUser = {
+          id: nextUserId,
+          fullName: userData.fullName.trim(),
+          username: userData.username.trim(),
+          email: userData.email.trim().toLowerCase(),
+          phone: "",
+          role: userData.role,
+          password: hashed,
+          status: "Active",
+          canManageUsers: userData.role === "admin",
+          canManageRoles: userData.role === "admin" && currentUser?.canManageRoles === true,
+          canDeleteUsers: false,
+          isSuperAdmin: userData.role === "super-admin",
+          avatar: buildAvatar(userData.fullName),
+          createdAt: now,
+          updatedAt: now
+        };
+        await addUser(nextUser);
+        await addActivityLog({
+          user: currentUser.fullName,
+          action: "Admin account created during role creation",
+          target: nextUser.fullName
+        });
+      }
+
       setFeedback({ type: "success", message: `"${role.name}" has been created successfully.` });
     }
 
     setFormState(initialFormState);
+    setCreateUserAccount(false);
+    setUserData({
+      fullName: "",
+      username: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      role: "admin"
+    });
     setTimeout(() => setFeedback(null), 4000);
   };
 
@@ -613,6 +667,107 @@ export default function AdminRolesPage() {
                     className="w-full rounded-[14px] border border-black/10 bg-[#fdfaf8] px-4 py-2.5 text-sm text-[#3d3d50] placeholder:text-black/30 focus:border-[#9d7d6a]/40 focus:bg-white focus:shadow-[0_2px_8px_rgba(157,125,106,0.1)] focus:ring-0 transition-all duration-150 resize-none"
                   />
                 </div>
+
+                {!formState.id && (
+                  <div className="pt-2 border-t border-black/[0.05]">
+                    <label className="flex items-center gap-2 text-sm font-semibold text-ink cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={createUserAccount}
+                        onChange={(e) => setCreateUserAccount(e.target.checked)}
+                        className="rounded border-black/10 text-[#9d7d6a] focus:ring-[#9d7d6a]"
+                      />
+                      Create a user account immediately
+                    </label>
+
+                    {createUserAccount && (
+                      <div className="mt-4 p-4 rounded-[18px] bg-gradient-to-br from-[#faf6f2] to-[#fdfaf8] border border-black/[0.05] space-y-4">
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-black/45">
+                          New User Details
+                        </p>
+                        
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Full Name
+                            </label>
+                            <input
+                              value={userData.fullName}
+                              onChange={(e) => setUserData(c => ({ ...c, fullName: e.target.value }))}
+                              placeholder="e.g. Imasha"
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Username
+                            </label>
+                            <input
+                              value={userData.username}
+                              onChange={(e) => setUserData(c => ({ ...c, username: e.target.value }))}
+                              placeholder="e.g. imasha"
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Email Address
+                            </label>
+                            <input
+                              type="email"
+                              value={userData.email}
+                              onChange={(e) => setUserData(c => ({ ...c, email: e.target.value }))}
+                              placeholder="e.g. imasha@berryclothing.lk"
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Password
+                            </label>
+                            <input
+                              type="password"
+                              value={userData.password}
+                              onChange={(e) => setUserData(c => ({ ...c, password: e.target.value }))}
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Confirm Password
+                            </label>
+                            <input
+                              type="password"
+                              value={userData.confirmPassword}
+                              onChange={(e) => setUserData(c => ({ ...c, confirmPassword: e.target.value }))}
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            />
+                          </div>
+
+                          <div className="sm:col-span-2">
+                            <label className="block text-xs font-semibold uppercase tracking-[0.12em] text-black/50 mb-2">
+                              Role
+                            </label>
+                            <select
+                              value={userData.role}
+                              onChange={(e) => setUserData(c => ({ ...c, role: e.target.value as RoleKey }))}
+                              className="w-full rounded-[14px] border border-black/10 bg-white px-4 py-2.5 text-sm text-[#3d3d50]"
+                            >
+                              {editableRoleKeys.map((key) => (
+                                <option key={key} value={key}>
+                                  {ROLE_KEY_LABELS[key]}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                </div>
               </div>
 
               {/* Divider with label */}
@@ -706,11 +861,96 @@ export default function AdminRolesPage() {
                     permissions: role.permissions,
                   })
                 }
+                onView={() => setSelectedRoleForView(role)}
               />
             ))}
           </div>
         </div>
       </PermissionGuard>
+
+      {/* Modal / Detailed Panel for Role Permissions */}
+      {selectedRoleForView && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-2xl rounded-[28px] bg-white shadow-elevated ring-1 ring-black/5 overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Modal Header */}
+            <div className="border-b border-black/[0.05] px-6 py-5 bg-gradient-to-r from-[#fdfaf8] to-white flex items-start justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-[0.12em] text-black/40">Role Permissions</span>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-emerald-600/10">
+                    <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                    Active
+                  </span>
+                </div>
+                <h3 className="mt-2 text-xl font-semibold text-[#3d3d50]">{selectedRoleForView.name}</h3>
+                <p className="mt-2 text-sm text-black/50">{selectedRoleForView.description}</p>
+              </div>
+              <button
+                onClick={() => setSelectedRoleForView(null)}
+                className="rounded-full p-2 text-black/40 hover:bg-black/5 hover:text-black/65 transition-colors font-semibold"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
+              {buildPermissionGroups(selectedRoleForView.permissions).length === 0 ? (
+                <p className="text-sm text-black/45 py-4 text-center">No permissions assigned to this role.</p>
+              ) : (
+                buildPermissionGroups(selectedRoleForView.permissions).map(({ groupKey, permissions }) => {
+                  const config = MODULE_GROUPS[groupKey];
+                  return (
+                    <div key={groupKey} className="border-l-2 pl-4 py-1" style={{ borderColor: config?.accentClass?.split('[#')[1]?.slice(0, -1) ? `#${config?.accentClass?.split('[#')[1]?.slice(0, -1)}` : '#9d7d6a' }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={cn("flex h-7 w-7 items-center justify-center rounded-[8px] text-sm", config?.iconBgClass ?? "bg-[#f5f5f5]")}>
+                          <span className={config?.accentClass ?? "text-black/40"}>{config?.icon}</span>
+                        </span>
+                        <p className="text-sm font-semibold text-[#3d3d50]">
+                          {config?.label ?? groupKey}
+                        </p>
+                        <span className="ml-auto text-xs text-black/30">
+                          {permissions.length} {permissions.length === 1 ? 'privilege' : 'privileges'}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pl-1">
+                        {permissions.map((perm) => {
+                          const display = PERMISSION_DISPLAY[perm];
+                          if (!display) return null;
+                          const color = ACTION_COLORS[display.action] ?? ACTION_COLORS.Manage;
+                          return (
+                            <span
+                              key={perm}
+                              className={cn(
+                                "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1",
+                                color
+                              )}
+                              title={display.description || display.label}
+                            >
+                              <span className="h-1 w-1 rounded-full bg-current opacity-70" />
+                              <span>{display.label}</span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-black/[0.05] px-6 py-4 bg-[#fdfaf8] flex justify-end">
+              <button
+                onClick={() => setSelectedRoleForView(null)}
+                className="rounded-[12px] bg-[#9d7d6a] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#8a6d5c] shadow-[0_2px_8px_rgba(157,125,106,0.25)]"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminPage>
   );
 }

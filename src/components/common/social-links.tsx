@@ -7,14 +7,16 @@ const socialIconSources = {
   facebook: "https://cdn-icons-png.flaticon.com/512/733/733547.png",
   tiktok: "https://cdn-icons-png.flaticon.com/512/3046/3046121.png",
   whatsapp: "https://cdn-icons-png.flaticon.com/512/733/733585.png",
-  instagram: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png"
+  instagram: "https://cdn-icons-png.flaticon.com/512/2111/2111463.png",
+  youtube: "https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
 };
 
 const labels = {
   facebook: "Facebook",
   tiktok: "TikTok",
   whatsapp: "WhatsApp",
-  instagram: "Instagram"
+  instagram: "Instagram",
+  youtube: "YouTube"
 };
 
 export function SocialLinksRow({
@@ -28,7 +30,7 @@ export function SocialLinksRow({
   className?: string;
   iconClassName?: string;
 }) {
-  const entries = (["facebook", "tiktok", "whatsapp", "instagram"] as const)
+  const entries = (["facebook", "tiktok", "whatsapp", "instagram", "youtube"] as const)
     .map((key) => ({ key, href: links[key] }))
     .filter((entry) => Boolean(entry.href));
 

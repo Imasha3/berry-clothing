@@ -31,7 +31,7 @@ export function SiteHeader() {
   }, [pathname]);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#f3dee4] bg-white/95 backdrop-blur-xl shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-[#F8D7DF] bg-[#FDECEF]/80 backdrop-blur-2xl shadow-lg">
       <div className="mx-auto flex h-[78px] max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center">
           <Image
@@ -40,7 +40,7 @@ export function SiteHeader() {
             width={500}
             height={500}
             priority
-            className="h-12 w-auto rounded-none ring-1 ring-[#f5d3dd] sm:h-14"
+            className="h-12 w-auto rounded-none ring-2 ring-[#F8D7DF] sm:h-14"
           />
         </Link>
 
@@ -50,9 +50,11 @@ export function SiteHeader() {
               key={link.href}
               href={link.href}
               className={cn(
-                "border-b-2 border-transparent pb-1 transition duration-200 hover:border-berry-200 hover:text-berry-700",
-                pathname === link.href ? "border-berry-200 text-ink" : "text-black/70"
-              )}
+  "border-b-2 border-transparent pb-1 transition-all duration-300 hover:border-[#E79AB0] hover:text-[#C85A7C]",
+  pathname === link.href
+    ? "border-[#E79AB0] text-[#C85A7C] font-semibold"
+    : "text-[#5B4B50]"
+)}
             >
               {link.label}
             </Link>
@@ -62,7 +64,7 @@ export function SiteHeader() {
         <div className="hidden items-center gap-2 md:flex">
           <Link
             href="/shop"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-none border border-black/10 bg-white text-ink transition duration-200 hover:border-berry-200 hover:bg-[#fff1f5] hover:text-berry-700"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#F8D7DF] bg-[#FFF5F7] text-[#5B4B50] transition-all duration-300 hover:border-[#E79AB0] hover:bg-[#FFE7EE] hover:text-[#C85A7C]"
             aria-label="Search"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="h-5 w-5">
@@ -121,7 +123,7 @@ export function SiteHeader() {
       </div>
 
       {isMobileMenuOpen ? (
-        <div className="border-t border-[#f1d9dd] bg-[#fffaf8] px-4 pb-5 pt-3 shadow-[0_18px_35px_rgba(44,24,33,0.08)] md:hidden">
+        <div className="border-t border-[#F8D7DF] bg-[#FDECEF] px-4 pb-5 pt-3 shadow-[0_18px_35px_rgba(231,154,176,0.18)] md:hidden">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Link
@@ -178,8 +180,8 @@ export function SiteHeader() {
                 className={cn(
                   "rounded-none px-4 py-3 text-sm font-semibold transition",
                   pathname === link.href
-                    ? "bg-[#ffe4eb] text-berry-700"
-                    : "bg-white/80 text-black/70 ring-1 ring-black/5 hover:bg-[#fff1f5] hover:text-berry-700"
+                    ? "bg-[#FADCE4] text-[#C85A7C] ring-1 ring-[#F5C3D0]"
+                    : "bg-[#FFF5F7] text-[#5B4B50] ring-1 ring-[#F8D7DF] hover:bg-[#FFE7EE] hover:text-[#C85A7C]"
                 )}
               >
                 {link.label}

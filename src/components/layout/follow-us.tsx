@@ -26,6 +26,12 @@ const socialIcons = {
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
       <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
     </svg>
+  ),
+  youtube: (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+      <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+    </svg>
   )
 };
 
@@ -33,7 +39,8 @@ const labels = {
   instagram: "Instagram",
   facebook: "Facebook",
   tiktok: "TikTok",
-  whatsapp: "WhatsApp"
+  whatsapp: "WhatsApp",
+  youtube: "YouTube"
 };
 
 export function FollowUs() {
@@ -58,7 +65,7 @@ export function FollowUs() {
 
   const socialLinks = settings.socialLinks ?? DEFAULT_STORE_SETTINGS.socialLinks;
   
-  const activeSocials = (["instagram", "facebook", "tiktok", "whatsapp"] as const)
+  const activeSocials = (["instagram", "facebook", "tiktok", "whatsapp", "youtube"] as const)
     .map((key) => ({ key, href: socialLinks[key] }))
     .filter((entry) => Boolean(entry.href));
 

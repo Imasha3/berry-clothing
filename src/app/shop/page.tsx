@@ -100,65 +100,28 @@ export default function ShopPage() {
           ))}
         </div>
       </div>
-      <div className="mt-8 grid gap-8 lg:grid-cols-[300px_1fr]">
-        <aside className="space-y-4 rounded-[24px] border border-[#f3dde2] bg-white p-5 shadow-[0_18px_42px_rgba(23,18,18,0.08)]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-berry-700">Refine your edit</p>
-            <p className="mt-1 text-sm text-black/60">Out-of-stock pieces are clearly marked and remain visible for reference.</p>
-          </div>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search products"
-            className="w-full rounded-2xl border border-black/10 bg-[#fff8fa] px-4 py-3 text-sm transition focus:border-berry-300 focus:ring-4 focus:ring-berry-100"
-          />
-          <select value={size} onChange={(event) => setSize(event.target.value)} className="w-full rounded-2xl border border-black/10 bg-[#fff8fa] px-4 py-3 text-sm transition focus:border-berry-300 focus:ring-4 focus:ring-berry-100">
-            {["All", "XS", "S", "M", "L", "XL"].map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-          <select value={color} onChange={(event) => setColor(event.target.value)} className="w-full rounded-2xl border border-black/10 bg-[#fff8fa] px-4 py-3 text-sm transition focus:border-berry-300 focus:ring-4 focus:ring-berry-100">
-            {colorOptions.map((option) => (
-              <option key={option}>{option}</option>
-            ))}
-          </select>
-          <div className="rounded-[20px] border border-[#f3dde2] bg-[#fff8fa] p-3">
-            <p className="mb-2 text-sm font-semibold text-ink">Price range</p>
-            <div className="flex flex-wrap gap-2">
-              {priceOptions.map((option) => {
-                const active = price === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPrice(option.value)}
-                    className={`rounded-full px-3 py-2 text-sm font-semibold transition duration-200 ${
-                      active
-                        ? "bg-berry-500 text-white shadow-[0_10px_22px_rgba(243,64,120,0.22)]"
-                        : "bg-white text-black/70 ring-1 ring-black/5 hover:bg-berry-50"
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
+      <div className="mt-8">
+  <div>
+    <div className="mb-5 flex flex-col gap-4 rounded-[24px] border border-[#f3dde2] bg-white p-5 shadow-[0_18px_42px_rgba(23,18,18,0.08)] sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-black/60">
+        {products.length} products found
+      </p>
 
-        <div>
-          <div className="mb-5 flex flex-col gap-4 rounded-[24px] border border-[#f3dde2] bg-white p-5 shadow-[0_18px_42px_rgba(23,18,18,0.08)] sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-black/60">{products.length} products found</p>
-            <select value={sort} onChange={(event) => setSort(event.target.value)} className="rounded-2xl border border-black/10 bg-[#fff8fa] px-4 py-3 text-sm transition focus:border-berry-300 focus:ring-4 focus:ring-berry-100">
-              <option value="newest">Newest</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="best-sellers">Best Sellers</option>
-            </select>
-          </div>
-          <ProductGrid products={products} />
-        </div>
-      </div>
+      <select
+        value={sort}
+        onChange={(event) => setSort(event.target.value)}
+        className="rounded-2xl border border-black/10 bg-[#fff8fa] px-4 py-3 text-sm transition focus:border-berry-300 focus:ring-4 focus:ring-berry-100"
+      >
+        <option value="newest">Newest</option>
+        <option value="price-low">Price: Low to High</option>
+        <option value="price-high">Price: High to Low</option>
+        <option value="best-sellers">Best Sellers</option>
+      </select>
+    </div>
+
+    <ProductGrid products={products} />
+  </div>
+</div>
     </div>
   );
 }

@@ -59,7 +59,7 @@ export function SiteFooter() {
     .filter(([, href]) => Boolean(href));
 
   return (
-    <footer className="bg-[#fff1f6] text-ink">
+    <footer className="bg-[#f5eae6] text-ink">
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1.2fr]">
           <div className="space-y-6">
@@ -155,7 +155,7 @@ export function SiteFooter() {
                     aria-label={key}
                   >
                     <img
-                      src={`https://cdn-icons-png.flaticon.com/512/${key === "facebook" ? "733/733547" : key === "instagram" ? "2111/2111463" : key === "tiktok" ? "3046/3046121" : key === "whatsapp" ? "733/733585" : ""}.png`}
+                      src={`https://cdn-icons-png.flaticon.com/512/${key === "facebook" ? "733/733547" : key === "instagram" ? "2111/2111463" : key === "tiktok" ? "3046/3046121" : key === "whatsapp" ? "733/733585" : key === "youtube" ? "1384/1384060" : ""}.png`}
                       alt={key}
                       className="h-5 w-5 object-contain"
                       loading="lazy"
@@ -167,7 +167,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-berry-200/60 pt-6 text-sm text-black/50 sm:flex sm:items-center sm:justify-between">
+        <div className="mt-12 border-t border-[#ebdcd8] pt-6 text-sm text-black/50 sm:flex sm:items-center sm:justify-between">
           <p>
             © {year} {settings.storeName}. {settings.footerText || DEFAULT_STORE_SETTINGS.footerText}
           </p>

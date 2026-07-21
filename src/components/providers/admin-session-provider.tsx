@@ -74,7 +74,7 @@ function createLocalAdminUserId(email: string) {
   return `usr-${Date.now()}-${email.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 18)}`;
 }
 
-function normalizeAdminPayload<T extends { fullName: string; username: string; email: string; phone: string }>(
+function normalizeAdminPayload<T extends { fullName: string; username: string; email: string; phone?: string }>(
   payload: T
 ) {
   return {
@@ -82,18 +82,26 @@ function normalizeAdminPayload<T extends { fullName: string; username: string; e
     fullName: payload.fullName.trim(),
     username: payload.username.trim(),
     email: payload.email.trim().toLowerCase(),
-    phone: payload.phone.trim()
+    phone: (payload.phone ?? "").trim()
   };
 }
 
 function validateAccountFields(
-  payload: Pick<AdminAccountPayload, "fullName" | "username" | "email" | "phone" | "password">
+  payload: Pick<AdminAccountPayload, "fullName" | "username" | "email" | "password">
 ) {
-  if (!payload.fullName || !payload.username || !payload.email || !payload.phone || !payload.password) {
+  if (!payload.fullName || !payload.username || !payload.email || !payload.password) {
     return "Please complete all account fields.";
   }
 
   return null;
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
 function canCreateRole(currentUser: AdminUser | null, role: RoleKey) {
@@ -152,8 +160,11 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
     try {
       if (isFirebaseConfigured()) {
         await loginWithEmail(user.email, password);
-      } else if (user.password !== password) {
-        return { ok: false, message: "Invalid username/email or password." };
+      } else {
+        const hashedInput = await hashPassword(password);
+        if (user.password !== hashedInput && user.password !== password) {
+          return { ok: false, message: "Invalid username/email or password." };
+        }
       }
 
       persistSession(user.id);
@@ -198,7 +209,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
         email: normalized.email,
         phone: normalized.phone,
         role: normalized.role,
-        password: isFirebaseConfigured() ? "" : normalized.password,
+        password: isFirebaseConfigured() ? "" : await hashPassword(normalized.password),
         status: normalized.status,
         canManageUsers: normalized.role === "admin",
         canManageRoles: normalized.role === "admin" && currentUser?.canManageRoles === true,
@@ -250,7 +261,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
         email: normalized.email,
         phone: normalized.phone,
         role: "super-admin",
-        password: isFirebaseConfigured() ? "" : normalized.password,
+        password: isFirebaseConfigured() ? "" : await hashPassword(normalized.password),
         status: "Active",
         canManageUsers: true,
         canManageRoles: true,
