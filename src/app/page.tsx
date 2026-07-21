@@ -7,7 +7,6 @@ import { TestimonialSlider } from "@/components/common/testimonial-slider";
 import { ProductGrid } from "@/components/product/product-grid";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { buttonStyles } from "@/components/ui/button";
-import { LatestFashionVideos } from "@/components/video/latest-fashion-videos";
 import { getProductPricing } from "@/lib/product";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 import { cn } from "@/lib/utils";
@@ -269,8 +268,6 @@ export default function HomePage() {
           View All Products
         </Link>
       </section>
-
-      <LatestFashionVideos />
 
       {reviews.length ? (
         <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">

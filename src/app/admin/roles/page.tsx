@@ -43,7 +43,6 @@ const PERMISSION_DISPLAY: Record<
   "reviews.manage":        { label: "Moderate Feedback",            action: "Manage",  groupKey: "reviews", description: "Review and manage customer feedback" },
   "users.manage":          { label: "Manage Team Access",           action: "Manage",  groupKey: "users", description: "Administer team member accounts" },
   "roles.manage":          { label: "Configure Access Control",     action: "Manage",  groupKey: "roles", description: "Create and modify access roles" },
-  "videos.manage":         { label: "Manage Video Library",         action: "Manage",  groupKey: "reviews", description: "Upload, preview, and remove media videos" },
   "settings.manage":       { label: "Manage Platform Settings",     action: "Manage",  groupKey: "settings", description: "Configure system preferences" },
   "email_templates.manage":{ label: "Manage Communications",        action: "Manage",  groupKey: "email-templates", description: "Edit email templates and messaging" },
 };

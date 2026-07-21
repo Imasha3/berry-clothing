@@ -4,7 +4,6 @@ import type { OrderStatus } from "@/types/order";
 export const siteNavLinks = [
   { href: "/", label: "Home" },
   { href: "/shop", label: "Shop" },
-  { href: "/videos", label: "Videos" },
   { href: "/size-guide", label: "Size Guide" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" }
@@ -56,7 +55,6 @@ export const adminModules: Array<{
   { key: "reports", href: "/admin/reports", label: "Reports", icon: "▤" },
   { key: "promotions", href: "/admin/promotions", label: "Promotions", icon: "✦" },
   { key: "reviews", href: "/admin/reviews", label: "Reviews", icon: "★" },
-  { key: "videos", href: "/admin/videos", label: "Video Management", icon: "▶" },
   { key: "users", href: "/admin/users", label: "Users & Permissions", icon: "◎" },
   { key: "roles", href: "/admin/roles", label: "Roles", icon: "◇" },
   { key: "contact-settings", href: "/admin/contact-settings", label: "Contact Settings", icon: "@" },

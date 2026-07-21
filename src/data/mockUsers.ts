@@ -21,7 +21,8 @@ export const allPermissions: Permission[] = [
   "customers.view",
   "reports.view",
   "promotions.manage",
-  "reviews.manage",  "videos.manage",  "users.manage",
+  "reviews.manage",
+  "users.manage",
   "roles.manage",
   "settings.manage",
   "email_templates.manage"
@@ -71,7 +72,7 @@ export const mockRoles: Role[] = [
     key: "marketing-staff",
     name: "Marketing Staff",
     description: "Owns promotions, reviews, and campaign content modules.",
-    permissions: ["dashboard.view", "promotions.manage", "reviews.manage", "products.view", "reports.view", "videos.manage"],
+    permissions: ["dashboard.view", "promotions.manage", "reviews.manage", "products.view", "reports.view"],
     createdAt: "2026-06-01T08:20:00.000Z",
     updatedAt: "2026-06-12T08:30:00.000Z"
   }

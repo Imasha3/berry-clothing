@@ -1,10 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
-import { Readable } from "stream";
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dycqf6xbh";
 const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
 const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
-const VIDEO_FOLDER = "berry-clothing/videos";
 const PRODUCT_FOLDER = "berry-clothing/products";
 
 cloudinary.config({
@@ -19,97 +17,10 @@ function assertCloudinaryCredentials() {
   }
 }
 
-export async function uploadVideoToCloudinary(filePath: string, filename: string) {
-  assertCloudinaryCredentials();
-
-  return cloudinary.uploader.upload(filePath, {
-    resource_type: "video",
-    folder: VIDEO_FOLDER,
-    public_id: filename.replace(/\.[^/.]+$/, ""),
-    display_name: filename.replace(/\.[^/.]+$/, "")
-  });
-}
-
-export async function uploadBufferToCloudinary(buffer: Buffer, filename: string, resourceType: "video" | "image" = "image") {
-  assertCloudinaryCredentials();
-
-  return new Promise<any>((resolve, reject) => {
-    const options: Record<string, any> = {
-      resource_type: resourceType,
-      folder: resourceType === "video" ? VIDEO_FOLDER : PRODUCT_FOLDER,
-      public_id: filename.replace(/\.[^/.]+$/, ""),
-      display_name: filename.replace(/\.[^/.]+$/, "")
-    };
-
-    const uploadStream = cloudinary.uploader.upload_stream(options, (error, result) => {
-      if (error) return reject(error);
-      resolve(result);
-    });
-
-    Readable.from([buffer]).pipe(uploadStream);
-  });
-}
-
-export async function deleteCloudinaryAsset(publicId: string, resourceType: "video" | "image" = "video") {
+export async function deleteCloudinaryAsset(publicId: string, resourceType: "video" | "image" = "image") {
   assertCloudinaryCredentials();
 
   return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
-}
-
-export async function updateCloudinaryVideoTitle(publicId: string, title: string) {
-  assertCloudinaryCredentials();
-
-  return cloudinary.uploader.explicit(publicId, {
-    resource_type: "video",
-    type: "upload",
-    display_name: title,
-    context: {
-      caption: title
-    }
-  });
-}
-
-export async function listCloudinaryVideos() {
-  assertCloudinaryCredentials();
-
-  const response = await cloudinary.api.resources({
-    type: "upload",
-    resource_type: "video",
-    prefix: `${VIDEO_FOLDER}/`,
-    max_results: 100,
-    direction: "desc"
-  });
-
-  return response.resources.map((resource: {
-    public_id: string;
-    secure_url: string;
-    created_at: string;
-    display_name?: string;
-    filename?: string;
-    context?: {
-      custom?: {
-        caption?: string;
-      };
-    };
-    format?: string;
-    bytes?: number;
-    duration?: number;
-  }) => ({
-    id: resource.public_id,
-    title:
-      resource.context?.custom?.caption ||
-      resource.display_name ||
-      resource.filename ||
-      resource.public_id.split("/").pop() ||
-      "Fashion video",
-    videoUrl: resource.secure_url,
-    publicId: resource.public_id,
-    createdAt: resource.created_at,
-    updatedAt: resource.created_at,
-    format: resource.format,
-    bytes: resource.bytes,
-    duration: resource.duration
-  }));
 }
 
 export async function listCloudinaryProductImages() {

@@ -13,7 +13,6 @@ const moduleRules: Record<ModuleKey, Permission[]> = {
   reports: ["reports.view"],
   promotions: ["promotions.manage"],
   reviews: ["reviews.manage"],
-  videos: ["videos.manage"],
   users: ["users.manage"],
   roles: ["roles.manage"],
   "contact-settings": ["settings.manage"],
