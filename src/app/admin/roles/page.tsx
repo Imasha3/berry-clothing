@@ -768,6 +768,7 @@ export default function AdminRolesPage() {
                       </div>
                     )}
                 </div>
+                 )}
               </div>
 
               {/* Divider with label */}
