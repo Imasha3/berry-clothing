@@ -8,7 +8,8 @@ export type OrderStatus =
   | "Dispatched"
   | "Out for Delivery"
   | "Delivered"
-  | "Completed";
+  | "Completed"
+  | "Cancelled";
 
 export type PaymentMethod =
   | "Cash on Delivery"

@@ -5,6 +5,7 @@ import { AdminSessionProvider } from "@/components/providers/admin-session-provi
 import { CartProvider } from "@/components/providers/cart-provider";
 import { CommerceStoreProvider } from "@/components/providers/commerce-store-provider";
 import { CustomerSessionProvider } from "@/components/providers/customer-session-provider";
+import { DialogProvider } from "@/components/providers/dialog-provider";
 import "@/styles/globals.css";
 
 const playfair = Playfair_Display({
@@ -51,9 +52,11 @@ export default function RootLayout({
         <CommerceStoreProvider>
           <AdminSessionProvider>
             <CustomerSessionProvider>
-              <CartProvider>
-                <AppShell>{children}</AppShell>
-              </CartProvider>
+              <DialogProvider>
+                <CartProvider>
+                  <AppShell>{children}</AppShell>
+                </CartProvider>
+              </DialogProvider>
             </CustomerSessionProvider>
           </AdminSessionProvider>
         </CommerceStoreProvider>

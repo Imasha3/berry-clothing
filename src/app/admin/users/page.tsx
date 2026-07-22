@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
 import type { RoleKey } from "@/types/user";
+import { useConfirm, useAlert, useToast } from "@/components/providers/dialog-provider";
 
 interface UserFormState {
   fullName: string;
@@ -27,7 +28,7 @@ const initialFormState: UserFormState = {
   email: "",
   username: "",
   phone: "",
-  role: "admin",
+  role: "order-staff",
   password: "",
   confirmPassword: "",
   status: "Active"
@@ -43,6 +44,9 @@ function buildAvatar(name: string) {
 }
 
 export default function AdminUsersPage() {
+  const confirm = useConfirm();
+  const alert = useAlert();
+  const toast = useToast();
   const {
     users,
     roles,
@@ -91,6 +95,27 @@ export default function AdminUsersPage() {
   };
 
   const saveUser = async () => {
+    if (editingUserId === currentUser.id && currentUser.role === "super-admin") {
+      if (formState.status === "Inactive") {
+        toast.error("You cannot deactivate or delete your own Super Admin account.");
+        await alert({
+          title: "Restriction Warning",
+          message: "You cannot deactivate or delete your own Super Admin account.\n\nThis restriction protects the system from accidental lockout.",
+          type: "warning"
+        });
+        return;
+      }
+      if (formState.role !== "super-admin") {
+        toast.error("You cannot change your own Super Admin role to a lower privilege.");
+        await alert({
+          title: "Restriction Warning",
+          message: "You cannot change your own Super Admin role to a lower privilege.\n\nThis restriction protects the system from accidental lockout.",
+          type: "warning"
+        });
+        return;
+      }
+    }
+
     if (!formState.fullName || !formState.email || !formState.username || !formState.phone) {
       setErrorFeedback("Please complete all user fields before saving.");
       return;
@@ -401,33 +426,7 @@ export default function AdminUsersPage() {
                       >
                         Edit
                       </Button>
-                      <Button
-                        variant="secondary"
-                        onClick={async () => {
-                          const nextStatus = user.status === "Active" ? "Inactive" : "Active";
-                          await updateUserStatus(user.id, nextStatus);
-                          await addActivityLog({
-                            user: currentUser.fullName,
-                            action: `User ${nextStatus === "Active" ? "activated" : "deactivated"}`,
-                            target: user.fullName
-                          });
-                          setSuccessFeedback(`${user.fullName} marked as ${nextStatus}.`);
-                        }}
-                      >
-                        {user.status === "Active" ? "Deactivate" : "Activate"}
-                      </Button>
-                      {!hideDelete ? (
-                        <Button
-                          variant="ghost"
-                          onClick={async () => {
-                            await deleteUser(user.id);
-                            await addActivityLog({
-                              user: currentUser.fullName,
-                              action: "User deleted",
-                              target: user.fullName
-                            });
-                            setSuccessFeedback(`${user.fullName} removed.`);
-                          }}
+
                         >
                           Delete
                         </Button>

@@ -10,8 +10,11 @@ import { buttonStyles } from "@/components/ui/button";
 import { hasPermission } from "@/lib/permissions";
 import { useMockCategories } from "@/lib/categories";
 import { formatDate } from "@/lib/utils";
+import { useConfirm, useToast } from "@/components/providers/dialog-provider";
 
 export default function AdminCategoriesPage() {
+  const confirm = useConfirm();
+  const toast = useToast();
   const { currentRole } = useAdminSession();
   const { isReady, categories, deleteCategory, getCategoryProductCount } = useMockCategories();
   const [search, setSearch] = useState("");
@@ -23,7 +26,7 @@ export default function AdminCategoriesPage() {
       categories.filter((category) => {
         const matchesSearch =
           category.name.toLowerCase().includes(search.toLowerCase()) ||
-          category.slug.toLowerCase().includes(search.toLowerCase());
+          (category.description && category.description.toLowerCase().includes(search.toLowerCase()));
 
         const matchesStatus = statusFilter === "All" || category.status === statusFilter;
         return matchesSearch && matchesStatus;
@@ -31,19 +34,31 @@ export default function AdminCategoriesPage() {
     [categories, search, statusFilter]
   );
 
-  const handleDelete = (categoryId: string) => {
+  const handleDelete = async (categoryId: string) => {
     const category = categories.find((item) => item.id === categoryId);
     if (!category) {
       return;
     }
 
     if (getCategoryProductCount(category.name) > 0) {
-      setNotice("This category has products. Please move or remove products before deleting.");
+      toast.warning("This category has products. Please move or remove products before deleting.");
       return;
     }
 
-    deleteCategory(categoryId);
-    setNotice("Mock category deleted successfully.");
+    const confirmed = await confirm({
+      title: "Delete Category",
+      message: `Are you sure you want to delete the category "${category.name}"?`,
+      confirmText: "Delete",
+      type: "danger"
+    });
+    if (confirmed) {
+      try {
+        await deleteCategory(categoryId);
+        toast.success("✅ Category deleted successfully.");
+      } catch (err: any) {
+        toast.error("❌ Something went wrong. Please try again.");
+      }
+    }
   };
 
   return (

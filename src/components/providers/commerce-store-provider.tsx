@@ -65,6 +65,7 @@ interface CommerceStoreState {
   updateCategory: (categoryId: string, updates: Partial<Category>) => Promise<void>;
   deleteCategory: (categoryId: string) => Promise<void>;
   addOrder: (order: Order) => Promise<void>;
+  updateOrder: (orderId: string, updates: Partial<Order>) => Promise<void>;
   addCustomer: (customer: Customer) => Promise<void>;
   updateCustomer: (customerId: string, updates: Partial<Customer>) => Promise<void>;
   setInventoryMovements: (movements: InventoryMovement[]) => Promise<void>;
@@ -797,6 +798,33 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         setOrders(nextOrders);
         setPaymentReceipts(nextPaymentReceipts);
         persistCurrentMockStore({ orders: nextOrders, paymentReceipts: nextPaymentReceipts });
+      },
+      updateOrder: async (orderId, updates) => {
+        const existingOrder = orders.find((order) => order.id === orderId);
+        if (!existingOrder) {
+          throw new Error("Order not found");
+        }
+
+        const nextOrder = {
+          ...existingOrder,
+          ...updates,
+          invoice: {
+            ...existingOrder.invoice,
+            ...(updates.invoice ?? {})
+          }
+        };
+        const nextOrders = orders.map((order) => (order.id === orderId ? nextOrder : order));
+
+        if (dataMode === "firestore") {
+          const db = getFirestoreDb();
+          if (db) {
+            await setDoc(doc(db, firestoreCollections.orders, orderId), nextOrder);
+            return;
+          }
+        }
+
+        setOrders(nextOrders);
+        persistCurrentMockStore({ orders: nextOrders });
       },
       addCustomer: async (customer) => {
         const nextCustomers = [customer, ...customers];

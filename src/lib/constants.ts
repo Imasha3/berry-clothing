@@ -69,5 +69,6 @@ export const orderWorkflow: OrderStatus[] = [
   "Dispatched",
   "Out for Delivery",
   "Delivered",
-  "Completed"
+  "Completed",
+  "Cancelled"
 ];

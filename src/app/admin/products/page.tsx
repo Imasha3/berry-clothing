@@ -10,8 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
 import { getLowStockVariants, getProductMainImage, getProductPricing } from "@/lib/product";
 import { formatCurrency } from "@/lib/utils";
+import { useConfirm, useToast } from "@/components/providers/dialog-provider";
 
 export default function AdminProductsPage() {
+  const confirm = useConfirm();
+  const toast = useToast();
   const { products, deleteProduct } = useCommerceStore();
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
@@ -21,12 +24,10 @@ export default function AdminProductsPage() {
       return;
     }
 
-    const successMessage = window.sessionStorage.getItem("admin-products-success");
-    if (!successMessage) {
-      return;
+    const storedSuccess = window.sessionStorage.getItem("admin-products-success");
+    if (storedSuccess) {
+      setMessage(storedSuccess);
     }
-
-    setMessage(successMessage);
     window.sessionStorage.removeItem("admin-products-success");
   }, []);
 
@@ -40,8 +41,21 @@ export default function AdminProductsPage() {
     [products, search]
   );
 
-  const handleDelete = (productId: string) => {
-    deleteProduct(productId);
+  const handleDelete = async (productId: string) => {
+    const confirmed = await confirm({
+      title: "Delete Product",
+      message: "Are you sure you want to delete this product?",
+      confirmText: "Delete",
+      type: "danger"
+    });
+    if (confirmed) {
+      try {
+        await deleteProduct(productId);
+        toast.success("✅ Product deleted successfully.");
+      } catch (err: any) {
+        toast.error("❌ Something went wrong. Please try again.");
+      }
+    }
   };
 
   return (
