@@ -259,7 +259,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </div>
         <div className="rounded-[28px] bg-white p-6 shadow-soft ring-1 ring-black/5">
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-berry-700">Latest Review</p>
-          {product.featuredReview ? (
+          {product.featuredReview && product.featuredReview.approved ? (
             <div className="mt-4 rounded-[24px] bg-[#fff5f4] p-5">
               <p className="text-berry-600">{Array.from({ length: product.featuredReview.rating }).map(() => "★").join("")}</p>
               <p className="mt-4 text-sm leading-7 text-black/65">&quot;{product.featuredReview.comment}&quot;</p>

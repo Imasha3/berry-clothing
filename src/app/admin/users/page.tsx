@@ -306,7 +306,8 @@ export default function AdminUsersPage() {
                       status: event.target.value as UserFormState["status"]
                     }))
                   }
-                  className="mt-2 w-full rounded-[18px] border border-black/10 bg-[#fcf6f2] px-4 py-3 text-sm font-normal"
+                  disabled={Boolean(editingUserId && users.find((user) => user.id === editingUserId)?.isSuperAdmin && editingUserId === currentUser.id)}
+                  className="mt-2 w-full rounded-[18px] border border-black/10 bg-[#fcf6f2] px-4 py-3 text-sm font-normal disabled:opacity-50"
                 >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
@@ -408,25 +409,97 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3">
                       <Button
+  variant="secondary"
+  onClick={() => {
+    setEditingUserId(user.id);
+    setFormState({
+      fullName: user.fullName,
+      email: user.email,
+      username: user.username,
+      phone: user.phone,
+      role: user.role,
+      password: "",
+      confirmPassword: "",
+      status: user.status
+    });
+    setFeedback("");
+  }}
+>
+  Edit
+</Button>
+                      <Button
                         variant="secondary"
-                        onClick={() => {
-                          setEditingUserId(user.id);
-                          setFormState({
-                            fullName: user.fullName,
-                            email: user.email,
-                            username: user.username,
-                            phone: user.phone,
-                            role: user.role,
-                            password: "",
-                            confirmPassword: "",
-                            status: user.status
-                          });
-                          setFeedback("");
+                        onClick={async () => {
+                          if (user.id === currentUser.id && user.isSuperAdmin) {
+                            toast.error("You cannot deactivate or delete your own Super Admin account.");
+                            await alert({
+                              title: "Restriction Warning",
+                              message: "You cannot deactivate or delete your own Super Admin account.\n\nThis restriction protects the system from accidental lockout.",
+                              type: "warning"
+                            });
+                            return;
+                          }
+
+                          const nextStatus = user.status === "Active" ? "Inactive" : "Active";
+                          if (nextStatus === "Inactive") {
+                            const confirmed = await confirm({
+                              title: "Deactivate User",
+                              message: `Are you sure you want to deactivate ${user.fullName}?`,
+                              confirmText: "Deactivate",
+                              type: "warning"
+                            });
+                            if (!confirmed) return;
+                          }
+
+                          try {
+                            await updateUserStatus(user.id, nextStatus);
+                            await addActivityLog({
+                              user: currentUser.fullName,
+                              action: `User ${nextStatus === "Active" ? "activated" : "deactivated"}`,
+                              target: user.fullName
+                            });
+                            toast.success(`✅ ${user.fullName} marked as ${nextStatus}.`);
+                          } catch (err: any) {
+                            toast.error("❌ Something went wrong. Please try again.");
+                          }
                         }}
                       >
-                        Edit
+                        {user.status === "Active" ? "Deactivate" : "Activate"}
                       </Button>
+                      {!hideDelete ? (
+                        <Button
+                          variant="ghost"
+                          onClick={async () => {
+                            if (user.id === currentUser.id && user.isSuperAdmin) {
+                              toast.error("You cannot deactivate or delete your own Super Admin account.");
+                              await alert({
+                                title: "Restriction Warning",
+                                message: "You cannot deactivate or delete your own Super Admin account.\n\nThis restriction protects the system from accidental lockout.",
+                                type: "warning"
+                              });
+                              return;
+                            }
 
+                            const confirmed = await confirm({
+                              title: "Delete User",
+                              message: `Are you sure you want to delete ${user.fullName}?`,
+                              confirmText: "Delete",
+                              type: "danger"
+                            });
+                            if (confirmed) {
+                              try {
+                                await deleteUser(user.id);
+                                await addActivityLog({
+                                  user: currentUser.fullName,
+                                  action: "User deleted",
+                                  target: user.fullName
+                                });
+                                toast.success(`✅ ${user.fullName} removed.`);
+                              } catch (err: any) {
+                                toast.error("❌ Something went wrong. Please try again.");
+                              }
+                            }
+                          }}
                         >
                           Delete
                         </Button>

@@ -106,7 +106,7 @@ export default function HomePage() {
     () =>
       products
         .map((product) => product.featuredReview)
-        .filter((review): review is NonNullable<(typeof products)[number]["featuredReview"]> => Boolean(review))
+        .filter((review): review is NonNullable<(typeof products)[number]["featuredReview"]> => Boolean(review && review.approved === true))
         .slice(0, 3),
     [products]
   );

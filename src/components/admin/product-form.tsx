@@ -14,6 +14,7 @@ import { useMockCategories } from "@/lib/categories";
 import { cn } from "@/lib/utils";
 import { uploadCloudinaryAsset } from "@/lib/cloudinary";
 import { calculateDiscountedPrice } from "@/lib/product";
+import { useConfirm, useToast } from "@/components/providers/dialog-provider";
 import type {
   Product,
   ProductAvailabilityStatus,
@@ -111,6 +112,8 @@ function createVariantId() {
 
 export function ProductForm({ mode, initialProduct }: ProductFormProps) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const { addProduct, updateProduct } = useCommerceStore();
   const { activeCategories, isReady: categoriesReady } = useMockCategories();
   const [isSaving, setIsSaving] = useState(false);
@@ -571,7 +574,29 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
           />
         </label>
         <label className="space-y-2">
-          <span className="text-sm font-semibold text-ink">Discount percentage</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-ink">Discount percentage</span>
+            {Number(fields.discountPercentage || 0) > 0 ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  const confirmed = await confirm({
+                    title: "Remove Discount",
+                    message: "Are you sure you want to remove this discount? This will reset the product to its original price.",
+                    confirmText: "Remove",
+                    type: "warning"
+                  });
+                  if (confirmed) {
+                    handleFieldChange("discountPercentage", "0");
+                    toast.success("✅ Discount removed successfully.");
+                  }
+                }}
+                className="text-xs text-rose-600 hover:underline font-semibold cursor-pointer"
+              >
+                Remove Discount
+              </button>
+            ) : null}
+          </div>
           <input
             type="number"
             min="0"

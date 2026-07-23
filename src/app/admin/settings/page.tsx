@@ -8,6 +8,7 @@ import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
 import { uploadCloudinaryAsset } from "@/lib/cloudinary";
+import { useConfirm, useToast } from "@/components/providers/dialog-provider";
 
 type ToastState = {
   tone: "success" | "error";
@@ -100,6 +101,8 @@ function SettingsCard({
 }
 
 export default function AdminSettingsPage() {
+  const confirm = useConfirm();
+  const dialogToast = useToast();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,8 +216,17 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const removeSlide = (slideId: string) => {
-    updateHomepageSlides((current) => current.filter((slide) => slide.id !== slideId));
+  const removeSlide = async (slideId: string) => {
+    const confirmed = await confirm({
+      title: "Delete Banner",
+      message: "Are you sure you want to delete this banner?",
+      confirmText: "Delete",
+      type: "danger"
+    });
+    if (confirmed) {
+      updateHomepageSlides((current) => current.filter((slide) => slide.id !== slideId));
+      dialogToast.success("✅ Banner deleted successfully.");
+    }
   };
 
   const toggleSlide = (slideId: string, isActive: boolean) => {
