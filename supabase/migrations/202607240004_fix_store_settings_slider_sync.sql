@@ -20,6 +20,13 @@ alter table public.homepage_slider
   add column if not exists slides jsonb not null default '[]'::jsonb,
   add column if not exists updated_at timestamptz not null default now();
 
+update public.homepage_slider
+set data = '[]'::jsonb
+where data is null;
+
+alter table public.homepage_slider
+  alter column data set default '[]'::jsonb;
+
 alter table public.store_settings enable row level security;
 alter table public.homepage_slider enable row level security;
 
@@ -62,10 +69,14 @@ begin
   end if;
 end $$;
 
-insert into public.homepage_slider (id, slides, updated_at)
-values (
+insert into public.homepage_slider (id, data, slides, updated_at)
+select
   'singleton',
-  coalesce(
+  slider_payload,
+  slider_payload,
+  now()
+from (
+  select coalesce(
     (
       select settings -> 'homepageSliderItems'
       from public.store_settings
@@ -73,15 +84,19 @@ values (
       limit 1
     ),
     '[]'::jsonb
-  ),
-  now()
-)
+  ) as slider_payload
+) payload
 on conflict (id) do update
 set
   slides = case
     when jsonb_array_length(public.homepage_slider.slides) = 0
       then coalesce(public.homepage_slider.data, excluded.slides)
     else public.homepage_slider.slides
+  end,
+  data = case
+    when jsonb_typeof(public.homepage_slider.data) = 'array'
+      then public.homepage_slider.data
+    else excluded.data
   end,
   updated_at = now();
 
