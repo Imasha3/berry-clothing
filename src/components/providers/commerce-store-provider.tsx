@@ -524,8 +524,13 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
       )
       .subscribe();
 
+    const refreshTimer = window.setInterval(() => {
+      void loadNotifications();
+    }, 30000);
+
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
       void supabaseClient.removeChannel(channel);
     };
   }, []);

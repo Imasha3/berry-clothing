@@ -50,10 +50,14 @@ export function AdminShell({ children }: PropsWithChildren) {
 
     if (notification.relatedType === "contact_message" || (notification.type === "system" && notification.title.includes("Contact"))) {
       router.push(`/admin/contact-messages?id=${notification.relatedId || ""}`);
-    } else if (notification.relatedType === "order" || ["order", "payment", "delivery", "order_status_update"].includes(notification.type)) {
+    } else if (notification.type === "payment") {
+      router.push(`/admin/payments?orderId=${notification.relatedId || ""}`);
+    } else if (notification.relatedType === "order" || ["order", "delivery", "order_status_update"].includes(notification.type)) {
       router.push(`/admin/orders/${notification.relatedId || ""}`);
     } else if (notification.relatedType === "customer" || notification.type === "new_customer") {
       router.push(`/admin/customers`);
+    } else if (notification.relatedType === "product" || notification.type === "low_stock") {
+      router.push(`/admin/inventory/${notification.relatedId || ""}`);
     } else if (notification.relatedId) {
       router.push(`/admin/orders/${notification.relatedId}`);
     }
