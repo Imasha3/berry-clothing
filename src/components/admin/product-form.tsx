@@ -117,6 +117,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
   const { addProduct, updateProduct } = useCommerceStore();
   const { activeCategories, isReady: categoriesReady } = useMockCategories();
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
   const [fields, setFields] = useState(() =>
     initialProduct
       ? {
@@ -308,7 +309,56 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     setVariants((current) => current.filter((variant) => variant.id !== variantId));
   };
 
-  const handleImageUpload = async (event: ChangeEvent<HTMLInputElement>) => {
+  const uploadImage = async (image: EditableProductImage) => {
+    if (!image.file) {
+      return;
+    }
+
+    try {
+      const response = await uploadCloudinaryAsset(image.file, (progress) => {
+        setImages((current) =>
+          current.map((entry) =>
+            entry.id === image.id ? { ...entry, uploadProgress: progress } : entry
+          )
+        );
+      });
+
+      if (image.previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(image.previewUrl);
+        objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== image.previewUrl);
+      }
+
+      setImages((current) =>
+        current.map((entry) =>
+          entry.id === image.id
+            ? {
+                ...entry,
+                id: response.public_id,
+                previewUrl: response.secure_url,
+                storedPreviewUrl: response.secure_url,
+                uploadProgress: 100,
+                uploadError: undefined,
+                file: undefined,
+                resourceType: (response.resource_type === "video" ? "video" : "image") as "image" | "video"
+              }
+            : entry
+        )
+      );
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Upload failed.";
+      setImages((current) =>
+        current.map((entry) =>
+          entry.id === image.id
+            ? { ...entry, uploadProgress: undefined, uploadError: errorMessage }
+            : entry
+        )
+      );
+    } finally {
+      setUploadingCount((current) => Math.max(0, current - 1));
+    }
+  };
+
+  const handleImageUpload = (event: ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = Array.from(event.target.files ?? []);
     if (uploadedFiles.length === 0) {
       return;
@@ -334,13 +384,15 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
     setImages((current) => [...current, ...nextImages]);
     setFailedPreviewImageIds((current) => current.filter((id) => !nextImages.some((image) => image.id === id)));
+    setUploadingCount((current) => current + nextImages.length);
+    void Promise.all(nextImages.map(uploadImage));
 
     event.target.value = "";
   };
 
-  const removeImage = (imageId: string) => {
+  const removeImage = async (imageId: string) => {
+    const imageToRemove = images.find((image) => image.id === imageId);
     setImages((current) => {
-      const imageToRemove = current.find((image) => image.id === imageId);
       if (imageToRemove?.file && imageToRemove.previewUrl) {
         URL.revokeObjectURL(imageToRemove.previewUrl);
         objectUrlsRef.current = objectUrlsRef.current.filter((url) => url !== imageToRemove.previewUrl);
@@ -356,6 +408,20 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       return nextImages;
     });
     setFailedPreviewImageIds((current) => current.filter((id) => id !== imageId));
+
+    if (imageToRemove?.id.startsWith("berry-clothing/products/")) {
+      try {
+        const response = await fetch(
+          `/api/product-images?publicId=${encodeURIComponent(imageToRemove.id)}&resourceType=${imageToRemove.resourceType ?? "image"}`,
+          { method: "DELETE" }
+        );
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
+      } catch (error) {
+        console.error("Failed to delete removed image from Cloudinary:", error);
+      }
+    }
   };
 
   const markImageAsMain = (imageId: string) => {
@@ -373,52 +439,13 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     setIsSaving(true);
     setMessage("");
 
-    let uploadFailed = false;
-
-    const uploadedImages = await Promise.all(
-      images.map(async (image) => {
-        if (!image.file) {
-          return image;
-        }
-
-        try {
-          const response = await uploadCloudinaryAsset(image.file, (progress) => {
-            setImages((current) =>
-              current.map((entry) =>
-                entry.id === image.id ? { ...entry, uploadProgress: progress } : entry
-              )
-            );
-          });
-
-          return {
-            ...image,
-            id: response.public_id,
-            previewUrl: response.secure_url,
-            storedPreviewUrl: response.secure_url,
-            uploadProgress: 100,
-            uploadError: undefined,
-            file: undefined,
-            resourceType: (response.resource_type === "video" ? "video" : "image") as "image" | "video"
-          };
-        } catch (error) {
-          uploadFailed = true;
-          const errorMessage = error instanceof Error ? error.message : "Upload failed.";
-          return {
-            ...image,
-            uploadProgress: undefined,
-            uploadError: errorMessage
-          };
-        }
-      })
-    );
-
-    setImages(uploadedImages);
-
-    if (uploadFailed) {
-      setMessage("Some media uploads failed. Please remove failed items or try again.");
+    if (uploadingCount > 0 || images.some((image) => image.file || image.uploadError)) {
+      setMessage("Wait for media uploads to finish, then remove or retry any failed item.");
       setIsSaving(false);
       return;
     }
+
+    const uploadedImages = images;
 
     const stockQuantity = Number(fields.stockQuantity || 0);
     const minStockLevel = Number(fields.minStockLevel || 0);
@@ -857,7 +884,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
           <div>
             <h2 className="text-base font-semibold text-ink">Product image upload</h2>
             <p className="mt-1 text-sm text-black/60">
-              Placeholder upload flow for now. Multiple images, preview, remove, and main image selection are ready.
+              Files upload to Cloudinary immediately. You can preview, remove, and select the main image before saving the product.
             </p>
           </div>
           <input
@@ -874,7 +901,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
         </div>
         {images.length === 0 ? (
           <div className="mt-5 rounded-[24px] border border-dashed border-black/15 bg-white px-6 py-12 text-center text-sm text-black/55">
-            Add one or more product images to preview them here. Cloudinary integration will be connected later.
+            Add one or more product images or videos to upload them to Cloudinary.
           </div>
         ) : (
           <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -962,8 +989,14 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" disabled={isSaving}>
-          {isSaving ? "Saving..." : mode === "add" ? "Create product" : "Save product changes"}
+        <Button type="submit" disabled={isSaving || uploadingCount > 0}>
+          {isSaving
+            ? "Saving..."
+            : uploadingCount > 0
+              ? `Uploading media (${uploadingCount})...`
+              : mode === "add"
+                ? "Create product"
+                : "Save product changes"}
         </Button>
         <Button type="button" variant="secondary" onClick={() => setMessage("")}>
           Clear notice
