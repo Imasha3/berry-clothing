@@ -1,5 +1,20 @@
 create extension if not exists pgcrypto;
 
+create table if not exists public.deleted_store_records (
+  table_name text not null,
+  app_id text not null,
+  deleted_at timestamptz not null default now(),
+  primary key (table_name, app_id)
+);
+
+alter table public.deleted_store_records enable row level security;
+drop policy if exists deleted_store_records_public_access on public.deleted_store_records;
+create policy deleted_store_records_public_access
+on public.deleted_store_records
+for all to anon, authenticated
+using (true)
+with check (true);
+
 do $$
 declare
   record_table text;

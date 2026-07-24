@@ -18,13 +18,18 @@ apiRoute.get(async (_req, res) => {
 
 apiRoute.delete(async (req, res) => {
   const publicId = req.query.publicId || req.body.publicId;
+  const resourceType = req.query.resourceType || req.body.resourceType || "image";
 
   if (!publicId || typeof publicId !== "string") {
     return res.status(400).json({ error: "Image public ID is required." });
   }
 
+  if (resourceType !== "image" && resourceType !== "video") {
+    return res.status(400).json({ error: "Resource type must be image or video." });
+  }
+
   try {
-    const result = await deleteCloudinaryAsset(publicId, "image");
+    const result = await deleteCloudinaryAsset(publicId, resourceType);
     if (result.result !== "ok" && result.result !== "not found") {
       return res.status(400).json({ error: `Cloudinary could not delete this image. Result: ${result.result}` });
     }

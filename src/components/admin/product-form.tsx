@@ -474,11 +474,16 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
     }
 
     if (mode === "add") {
-      addProduct(normalizedProduct);
-      if (typeof window !== "undefined") {
-        window.sessionStorage.setItem("admin-products-success", "Product created successfully.");
+      try {
+        await addProduct(normalizedProduct);
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem("admin-products-success", "Product created successfully.");
+        }
+        router.push("/admin/products");
+      } catch (error) {
+        setMessage(error instanceof Error ? error.message : "Unable to save product.");
+        setIsSaving(false);
       }
-      router.push("/admin/products");
       return;
     }
 
@@ -499,9 +504,14 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       }
     }
 
-    updateProduct(initialProduct!.id, normalizedProduct);
-    setMessage("Product updated successfully.");
-    setIsSaving(false);
+    try {
+      await updateProduct(initialProduct!.id, normalizedProduct);
+      setMessage("Product updated successfully.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to update product.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const lowStockVariants = variants.filter(

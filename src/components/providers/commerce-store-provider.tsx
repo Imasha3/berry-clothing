@@ -88,6 +88,7 @@ interface CommerceStoreState {
 
 const StoreContext = createContext<CommerceStoreState | undefined>(undefined);
 const seededMarkerId = "__berry_seeded__";
+const deletedRecordsStoragePrefix = "berry-deleted-store-records";
 
 const defaults = {
   products: mockProducts,
@@ -169,6 +170,122 @@ function isStorageSchemaError(error: { code?: string; message?: string } | null)
   );
 }
 
+function getDeletedRecordStorageKey(table: CollectionName) {
+  return `${deletedRecordsStoragePrefix}:${table}`;
+}
+
+function readLocalDeletedRecordIds(table: CollectionName) {
+  if (typeof window === "undefined") {
+    return new Set<string>();
+  }
+
+  try {
+    const raw = window.localStorage.getItem(getDeletedRecordStorageKey(table));
+    const values = raw ? (JSON.parse(raw) as string[]) : [];
+    return new Set(values.filter(Boolean));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+function rememberLocalDeletedRecord(table: CollectionName, id: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const current = readLocalDeletedRecordIds(table);
+  current.add(id);
+  window.localStorage.setItem(getDeletedRecordStorageKey(table), JSON.stringify([...current]));
+}
+
+function forgetLocalDeletedRecord(table: CollectionName, id: string) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const current = readLocalDeletedRecordIds(table);
+  current.delete(id);
+  window.localStorage.setItem(getDeletedRecordStorageKey(table), JSON.stringify([...current]));
+}
+
+async function readDeletedRecordIds(table: CollectionName) {
+  const deletedIds = readLocalDeletedRecordIds(table);
+  const { data, error } = await supabaseClient
+    .from("deleted_store_records")
+    .select("app_id")
+    .eq("table_name", table);
+
+  if (!error && data) {
+    data.forEach((row: any) => {
+      if (row.app_id) {
+        deletedIds.add(row.app_id);
+      }
+    });
+  } else if (error && !isStorageSchemaError(error)) {
+    console.error(`Unable to load deleted ${table} records.`, error);
+  }
+
+  return deletedIds;
+}
+
+async function rememberDeletedRecord(table: CollectionName, id: string) {
+  rememberLocalDeletedRecord(table, id);
+
+  const { error } = await supabaseClient
+    .from("deleted_store_records")
+    .upsert(
+      { table_name: table, app_id: id, deleted_at: new Date().toISOString() },
+      { onConflict: "table_name,app_id" }
+    );
+
+  if (error && !isStorageSchemaError(error)) {
+    throw error;
+  }
+}
+
+async function forgetDeletedRecord(table: CollectionName, id: string) {
+  forgetLocalDeletedRecord(table, id);
+
+  const { error } = await supabaseClient
+    .from("deleted_store_records")
+    .delete()
+    .eq("table_name", table)
+    .eq("app_id", id);
+
+  if (error && !isStorageSchemaError(error)) {
+    throw error;
+  }
+}
+
+function filterDeletedRecords<T extends { id: string }>(records: T[], deletedIds: Set<string>) {
+  if (!deletedIds.size) {
+    return records;
+  }
+
+  return records.filter((record) => !deletedIds.has(record.id));
+}
+
+async function deleteProductCloudinaryAssets(product?: Product) {
+  if (!product?.images?.length) {
+    return;
+  }
+
+  await Promise.all(
+    product.images.map(async (image) => {
+      if (!image.id.startsWith("berry-clothing/products/")) {
+        return;
+      }
+
+      try {
+        const url = `/api/product-images?publicId=${encodeURIComponent(image.id)}&resourceType=${image.resourceType ?? "image"}`;
+        await fetch(url, { method: "DELETE" });
+      } catch (error) {
+        console.error("Failed to delete product asset from Cloudinary:", error);
+      }
+    })
+  );
+}
+
 async function seedRecords<T extends { id: string }>(table: CollectionName, fallback: T[]) {
   try {
     await Promise.all(fallback.map((entry) => writeRecord(table, entry)));
@@ -184,6 +301,7 @@ async function seedRecords<T extends { id: string }>(table: CollectionName, fall
 }
 
 async function readRecords<T extends { id: string }>(table: CollectionName, fallback: T[]): Promise<T[]> {
+  const deletedIds = await readDeletedRecordIds(table);
   const { data, error } = await supabaseClient.from(table).select("app_id,data").not("app_id", "is", null);
 
   if (!error && data) {
@@ -191,12 +309,13 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
     const hasSeedMarker = data.some((row: any) => row.app_id === seededMarkerId);
 
     if (realRows.length) {
-      return realRows.map((row: any) => row.data ?? row) as T[];
+      return filterDeletedRecords(realRows.map((row: any) => row.data ?? row) as T[], deletedIds);
     }
 
     if (!hasSeedMarker) {
-      await seedRecords(table, fallback);
-      return fallback;
+      const filteredFallback = filterDeletedRecords(fallback, deletedIds);
+      await seedRecords(table, filteredFallback);
+      return filteredFallback;
     }
 
     return [];
@@ -208,13 +327,15 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
 
   const legacy = await supabaseClient.from(table).select("id,data");
   if (!legacy.error && legacy.data?.length) {
-    return legacy.data.map((row: any) => row.data ?? row) as T[];
+    return filterDeletedRecords(legacy.data.map((row: any) => row.data ?? row) as T[], deletedIds);
   }
 
-  return fallback;
+  return filterDeletedRecords(fallback, deletedIds);
 }
 
 async function writeRecord<T extends { id: string }>(table: CollectionName, value: T) {
+  await forgetDeletedRecord(table, value.id);
+
   const now = new Date().toISOString();
   const { error } = await supabaseClient
     .from(table)
@@ -235,6 +356,8 @@ async function writeRecord<T extends { id: string }>(table: CollectionName, valu
 }
 
 async function removeRecord(table: CollectionName, id: string) {
+  await rememberDeletedRecord(table, id);
+
   const { error } = await supabaseClient.from(table).delete().eq("app_id", id);
 
   if (!error) {
@@ -247,7 +370,11 @@ async function removeRecord(table: CollectionName, id: string) {
 
   const legacy = await supabaseClient.from(table).delete().eq("id", id);
   if (legacy.error) {
-    throw new Error(`Unable to delete ${table}. Please run the latest Supabase migrations.`);
+    if (isStorageSchemaError(legacy.error)) {
+      return;
+    }
+
+    throw legacy.error;
   }
 }
 
@@ -413,10 +540,12 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
 
     const deleteProduct = async (id: string) => {
       const previousProducts = products;
+      const deletedProduct = products.find((entry) => entry.id === id);
       setProducts((current) => current.filter((entry) => entry.id !== id));
 
       try {
         await removeRecord("products", id);
+        await deleteProductCloudinaryAssets(deletedProduct);
       } catch (error) {
         setProducts(previousProducts);
         throw error;
