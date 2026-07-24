@@ -9,12 +9,7 @@ import {
   type PropsWithChildren
 } from "react";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
-import { isFirebaseConfigured } from "@/lib/firebase";
-import {
-  loginWithEmail,
-  logoutFirebaseUser,
-  registerSecondaryEmailPasswordUser
-} from "@/lib/firebaseAuth";
+import { supabaseClient } from "@/lib/supabase-client";
 import type { Permission } from "@/types/permission";
 import type { AdminUser, Role, RoleKey } from "@/types/user";
 
@@ -137,7 +132,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
   const persistSession = (userId: string) => {
     setCurrentUserId(userId);
     // Temporary local session cache for mock mode and client-side admin auth flows.
-    // Firebase Auth / Firestore can replace this fully once a backend-managed admin auth flow exists.
+    // Keep the session cache for fast client-side navigation.
     globalThis.localStorage?.setItem(authStorageKey, userId);
   };
 
@@ -158,9 +153,8 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
     }
 
     try {
-      if (isFirebaseConfigured()) {
-        await loginWithEmail(user.email, password);
-      } else {
+      const { error } = await supabaseClient.auth.signInWithPassword({ email: user.email, password });
+      if (error) {
         const hashedInput = await hashPassword(password);
         if (user.password !== hashedInput && user.password !== password) {
           return { ok: false, message: "Invalid username/email or password." };
@@ -198,9 +192,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
     }
 
     try {
-      const nextId = isFirebaseConfigured()
-        ? await registerSecondaryEmailPasswordUser(normalized.email, normalized.password)
-        : createLocalAdminUserId(normalized.email);
+      const nextId = createLocalAdminUserId(normalized.email);
       const now = new Date().toISOString();
       const nextUser: AdminUser = {
         id: nextId,
@@ -209,7 +201,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
         email: normalized.email,
         phone: normalized.phone,
         role: normalized.role,
-        password: isFirebaseConfigured() ? "" : await hashPassword(normalized.password),
+        password: await hashPassword(normalized.password),
         status: normalized.status,
         canManageUsers: normalized.role === "admin",
         canManageRoles: normalized.role === "admin" && currentUser?.canManageRoles === true,
@@ -250,9 +242,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
     }
 
     try {
-      const nextId = isFirebaseConfigured()
-        ? await registerSecondaryEmailPasswordUser(normalized.email, normalized.password)
-        : createLocalAdminUserId(normalized.email);
+      const nextId = createLocalAdminUserId(normalized.email);
       const now = new Date().toISOString();
       const nextUser: AdminUser = {
         id: nextId,
@@ -261,7 +251,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
         email: normalized.email,
         phone: normalized.phone,
         role: "super-admin",
-        password: isFirebaseConfigured() ? "" : await hashPassword(normalized.password),
+        password: await hashPassword(normalized.password),
         status: "Active",
         canManageUsers: true,
         canManageRoles: true,
@@ -285,9 +275,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
   const logout = async () => {
     setCurrentUserId(null);
     globalThis.localStorage?.removeItem(authStorageKey);
-    if (isFirebaseConfigured()) {
-      await logoutFirebaseUser();
-    }
+    await supabaseClient.auth.signOut();
   };
 
   const hasPermissionForCurrentUser = (permission: Permission) => {

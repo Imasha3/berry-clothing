@@ -8,11 +8,8 @@ import {
   useState,
   type PropsWithChildren
 } from "react";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
-import { isFirebaseConfigured } from "@/lib/firebase";
-import { firestoreCollections, getFirestoreDb } from "@/lib/firestore";
-import { loginWithEmail, logoutFirebaseUser, registerCustomer } from "@/lib/firebaseAuth";
+import { supabaseClient } from "@/lib/supabase-client";
 import type { Customer, CustomerAddress } from "@/types/customer";
 
 interface CustomerRegistrationPayload {
@@ -78,29 +75,6 @@ function normalizeDistrict(city: string) {
   return city.trim() || "Colombo";
 }
 
-async function readFirestoreCustomer(customerId: string) {
-  const db = getFirestoreDb();
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await getDoc(doc(db, firestoreCollections.customers, customerId));
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return snapshot.data() as Customer;
-}
-
-async function persistFirestoreCustomer(customer: Customer) {
-  const db = getFirestoreDb();
-  if (!db) {
-    return;
-  }
-
-  await setDoc(doc(db, firestoreCollections.customers, customer.id), customer);
-}
-
 export function CustomerSessionProvider({ children }: PropsWithChildren) {
   const { isReady: storeReady, customers, addCustomer, updateCustomer } = useCommerceStore();
   const [isReady, setIsReady] = useState(false);
@@ -119,12 +93,8 @@ export function CustomerSessionProvider({ children }: PropsWithChildren) {
         const parsed = JSON.parse(stored) as StoredCustomerSession;
         setCurrentCustomerId(parsed.customerId);
 
-        if (isFirebaseConfigured()) {
-          const firestoreCustomer = await readFirestoreCustomer(parsed.customerId);
-          if (firestoreCustomer) {
-            setSessionCustomer(firestoreCustomer);
-          }
-        }
+        const { data } = await supabaseClient.from("customers").select("*").eq("id", parsed.customerId).maybeSingle();
+        if (data?.data) setSessionCustomer(data.data as Customer);
       } catch {
         globalThis.localStorage?.removeItem(authStorageKey);
       } finally {
@@ -158,23 +128,6 @@ export function CustomerSessionProvider({ children }: PropsWithChildren) {
     }
 
     const normalizedEmail = payload.email.trim().toLowerCase();
-
-    if (isFirebaseConfigured()) {
-      try {
-        await loginWithEmail(normalizedEmail, payload.password);
-        const matchedCustomer =
-          customers.find((entry) => entry.email.toLowerCase() === normalizedEmail) ?? null;
-        if (!matchedCustomer) {
-          return { ok: false, message: "Customer profile not found." };
-        }
-
-        persistSession(matchedCustomer.id);
-        setSessionCustomer(matchedCustomer);
-        return { ok: true };
-      } catch (error) {
-        return { ok: false, message: error instanceof Error ? error.message : "Login failed." };
-      }
-    }
 
     const matchedCustomer = customers.find((entry) => entry.email.toLowerCase() === normalizedEmail) ?? null;
     if (!matchedCustomer) {
@@ -212,12 +165,9 @@ export function CustomerSessionProvider({ children }: PropsWithChildren) {
     nextCustomer.addresses = [createDefaultAddress(nextCustomer)];
 
     try {
-      if (isFirebaseConfigured()) {
-        await registerCustomer(normalizedEmail, payload.password);
-        await persistFirestoreCustomer(nextCustomer);
-      }
-
       await addCustomer(nextCustomer);
+      const { error: authError } = await supabaseClient.auth.signUp({ email: normalizedEmail, password: payload.password });
+      if (authError) throw authError;
       persistSession(nextCustomer.id);
       setSessionCustomer(nextCustomer);
       return { ok: true };
@@ -256,10 +206,6 @@ export function CustomerSessionProvider({ children }: PropsWithChildren) {
     };
 
     try {
-      if (isFirebaseConfigured()) {
-        await persistFirestoreCustomer(nextCustomer);
-      }
-
       await updateCustomer(customer.id, nextCustomer);
       setSessionCustomer(nextCustomer);
       persistSession(nextCustomer.id);
@@ -273,9 +219,7 @@ export function CustomerSessionProvider({ children }: PropsWithChildren) {
     setCurrentCustomerId(null);
     setSessionCustomer(null);
     globalThis.localStorage?.removeItem(authStorageKey);
-    if (isFirebaseConfigured()) {
-      await logoutFirebaseUser();
-    }
+    await supabaseClient.auth.signOut();
   };
 
   const value = useMemo(

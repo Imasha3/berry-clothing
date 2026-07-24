@@ -6,6 +6,7 @@ import { AdminPage } from "@/components/admin/admin-page";
 import { PermissionGuard } from "@/components/admin/permission-guard";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
+import { supabaseClient } from "@/lib/supabase-client";
 import type { StoreSettings } from "@/types/settings";
 
 type ToastState = {
@@ -53,6 +54,17 @@ function Field({
   );
 }
 
+async function getSettingsRequestHeaders(includeJson = false) {
+  const { data } = await supabaseClient.auth.getSession();
+  const headers: Record<string, string> = includeJson ? { "Content-Type": "application/json" } : {};
+
+  if (data.session?.access_token) {
+    headers.Authorization = `Bearer ${data.session.access_token}`;
+  }
+
+  return headers;
+}
+
 export default function AdminContactSettingsPage() {
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
@@ -62,7 +74,10 @@ export default function AdminContactSettingsPage() {
   const loadSettings = useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/settings", { cache: "no-store" });
+      const response = await fetch("/api/settings", {
+        cache: "no-store",
+        headers: await getSettingsRequestHeaders()
+      });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -112,7 +127,7 @@ export default function AdminContactSettingsPage() {
     try {
       const response = await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getSettingsRequestHeaders(true),
         body: JSON.stringify(mergeSettings(settings))
       });
       const data = await response.json().catch(() => ({}));

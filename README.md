@@ -9,7 +9,7 @@ This project is built to demonstrate:
 - A public shopping experience with category browsing, product detail pages, cart, and checkout
 - A customer account area with order history and order tracking
 - An admin panel with mock role-based access, product management, order management, inventory monitoring, reports, and settings
-- A future-ready code structure for Firebase, email, media, and payment integrations
+- Supabase-backed data and authentication with Cloudinary media storage
 
 ## Main Features
 
@@ -37,7 +37,7 @@ This project is built to demonstrate:
 - React
 - TypeScript
 - Tailwind CSS
-- Firebase SDK placeholders for future integration
+- Supabase SDK and Cloudinary integrations
 
 ## Public Website Pages
 
@@ -112,20 +112,8 @@ This project is built to demonstrate:
 - Admin navigation changes based on the selected mock role
 - Sensitive actions like product deletion stay hidden unless the role has permission
 
-## Firebase Preparation
-
-The following files are prepared for later backend connection without enabling live Firebase yet:
-
-- `src/lib/firebase.ts`
-- `src/lib/firebaseAuth.ts`
-- `src/lib/firestore.ts`
-
-Use `.env.local.example` as the reference for future Firebase configuration. Keep `.env.local` local-only and do not commit real credentials.
-
 ## Future Integrations
 
-- Firebase Firestore
-- Firebase Auth
 - Cloudinary
 - Resend Email API
 - PayHere / Stripe
@@ -141,6 +129,6 @@ npm run build
 ## Demo Notes
 
 - All data is currently mock data for safe frontend-only demos
-- No real Firebase backend is connected
+- Supabase is used for application data and authentication
 - No real payment gateway is connected
 - The project is prepared for responsive demo use on mobile and desktop

@@ -8,6 +8,7 @@ import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
 import { uploadCloudinaryAsset } from "@/lib/cloudinary";
+import { supabaseClient } from "@/lib/supabase-client";
 import { useConfirm, useToast } from "@/components/providers/dialog-provider";
 
 type ToastState = {
@@ -100,19 +101,34 @@ function SettingsCard({
   );
 }
 
+async function getSettingsRequestHeaders(includeJson = false) {
+  const { data } = await supabaseClient.auth.getSession();
+  const headers: Record<string, string> = includeJson ? { "Content-Type": "application/json" } : {};
+
+  if (data.session?.access_token) {
+    headers.Authorization = `Bearer ${data.session.access_token}`;
+  }
+
+  return headers;
+}
+
 export default function AdminSettingsPage() {
   const confirm = useConfirm();
   const dialogToast = useToast();
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingSlideIds, setUploadingSlideIds] = useState<string[]>([]);
   const [toast, setToast] = useState<ToastState>(null);
   const [errors, setErrors] = useState<ValidationErrors>({});
 
   const loadSettings = useCallback(async (attempt = 1) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/settings", { cache: "no-store" });
+      const response = await fetch("/api/settings", {
+        cache: "no-store",
+        headers: await getSettingsRequestHeaders()
+      });
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
@@ -205,14 +221,18 @@ export default function AdminSettingsPage() {
 
     updateHomepageSlides((current) => [...current, nextSlide]);
     event.target.value = "";
+    setUploadingSlideIds((current) => [...current, tempId]);
 
     try {
       const response = await uploadCloudinaryAsset(file);
       const secureUrl = response.secure_url;
       updateHomepageSlides((current) => current.map((s) => (s.id === tempId ? { ...s, imageUrl: secureUrl } : s)));
     } catch (err) {
-      // Keep preview if upload fails; user can retry
       console.error("Cloudinary upload failed", err);
+      updateHomepageSlides((current) => current.filter((s) => s.id !== tempId));
+      setToast({ tone: "error", message: "Slider image upload failed. Please try again." });
+    } finally {
+      setUploadingSlideIds((current) => current.filter((id) => id !== tempId));
     }
   };
 
@@ -267,10 +287,12 @@ export default function AdminSettingsPage() {
     }
 
     const previewUrl = URL.createObjectURL(file);
+    const previousSlide = settings.homepageSliderItems?.find((slide) => slide.id === slideId);
     updateHomepageSlides((current) =>
       current.map((slide) => (slide.id === slideId ? { ...slide, imageUrl: previewUrl } : slide))
     );
     event.target.value = "";
+    setUploadingSlideIds((current) => [...current, slideId]);
 
     try {
       const response = await uploadCloudinaryAsset(file);
@@ -278,6 +300,12 @@ export default function AdminSettingsPage() {
       updateHomepageSlides((current) => current.map((s) => (s.id === slideId ? { ...s, imageUrl: secureUrl } : s)));
     } catch (err) {
       console.error("Cloudinary upload failed", err);
+      updateHomepageSlides((current) =>
+        current.map((s) => (s.id === slideId && previousSlide ? { ...s, imageUrl: previousSlide.imageUrl } : s))
+      );
+      setToast({ tone: "error", message: "Slider image replacement failed. Please try again." });
+    } finally {
+      setUploadingSlideIds((current) => current.filter((id) => id !== slideId));
     }
   };
 
@@ -302,13 +330,18 @@ export default function AdminSettingsPage() {
       return;
     }
 
+    if (uploadingSlideIds.length) {
+      setToast({ tone: "error", message: "Please wait until slider image uploads finish before saving." });
+      return;
+    }
+
     setSaving(true);
     setToast(null);
 
     try {
       const response = await fetch("/api/settings", {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: await getSettingsRequestHeaders(true),
         body: JSON.stringify(mergeSettings(settings))
       });
       const data = await response.json().catch(() => ({}));
@@ -329,7 +362,7 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const canSave = useMemo(() => !saving && !isLoading, [isLoading, saving]);
+  const canSave = useMemo(() => !saving && !isLoading && uploadingSlideIds.length === 0, [isLoading, saving, uploadingSlideIds.length]);
 
   return (
     <AdminPage
@@ -566,6 +599,9 @@ export default function AdminSettingsPage() {
                             <div className="overflow-hidden rounded-[20px] border border-black/10 bg-white">
                               <img src={slide.imageUrl} alt={slide.title || "Homepage slider preview"} className="h-40 w-full object-cover" />
                             </div>
+                            {uploadingSlideIds.includes(slide.id) ? (
+                              <p className="text-xs font-semibold text-berry-700">Uploading image...</p>
+                            ) : null}
                             <div className="flex flex-wrap gap-2">
                               <Button variant="secondary" className="px-3 py-2 text-xs" onClick={() => moveSlide(slide.id, -1)}>
                                 Move Up

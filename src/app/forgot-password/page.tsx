@@ -6,7 +6,7 @@ export default function ForgotPasswordPage() {
       <div className="rounded-[32px] bg-white p-8 shadow-soft ring-1 ring-black/5">
         <h1 className="font-display text-4xl text-ink">Forgot Password</h1>
         <p className="mt-3 text-sm text-black/60">
-          This mock screen represents the future reset-email flow powered by Firebase Auth.
+          Password reset is handled through the configured Supabase Auth project.
         </p>
         <input placeholder="Enter your email" className="mt-6 w-full rounded-2xl border border-black/10 px-4 py-3" />
         <Button className="mt-5 w-full">Send Reset Link</Button>

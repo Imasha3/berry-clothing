@@ -208,7 +208,7 @@ export default function CheckoutPage() {
       }
 
       // Real card payments must go through a PCI-compliant gateway such as PayHere or Stripe.
-      // Never persist raw card numbers or CVV values to localStorage, Firestore, or application logs.
+      // Never persist raw card numbers or CVV values to localStorage or application logs.
       paymentStatus = "Paid";
       transactionId = `TXN-${orderId}-${cleanedCardNumber.slice(-4)}`;
       paidAt = createdAt;

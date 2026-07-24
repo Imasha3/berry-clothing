@@ -2,6 +2,7 @@ import { DEFAULT_STORE_SETTINGS } from "@/lib/store-settings";
 import type { HomepageSliderItem } from "@/types/homepage-slider";
 import type { StoreSettings } from "@/types/settings";
 import { supabaseAdmin } from "@/lib/supabase-server";
+import { getStoreSettings, updateStoreSettings } from "@/lib/settings-service";
 
 const defaultSlides: HomepageSliderItem[] = [
   {
@@ -43,38 +44,68 @@ function normalizeSlides(slides?: Partial<HomepageSliderItem>[] | null): Homepag
   return nextSlides.filter((slide) => slide.imageUrl).sort((left, right) => left.order - right.order);
 }
 
-async function readLocalSlides(): Promise<HomepageSliderItem[]> {
-  // read from Supabase
-  try {
-    const { data, error } = await supabaseAdmin.from("homepage_slider").select("slides").eq("id", "singleton").single();
-    if (error) {
-      return defaultSlides;
-    }
-
-    return normalizeSlides((data?.slides as Partial<HomepageSliderItem>[] ) ?? defaultSlides);
-  } catch {
-    return defaultSlides;
-  }
+function isMissingRowError(error: { code?: string } | null) {
+  return error?.code === "PGRST116";
 }
 
-async function writeLocalSlides(slides: HomepageSliderItem[]) {
-  // write to Supabase (upsert a singleton row)
-  const payload = { id: "singleton", slides };
-  await supabaseAdmin.from("homepage_slider").upsert(payload);
-  return slides;
+function isMissingColumnError(error: { code?: string; message?: string } | null) {
+  return error?.code === "42703" || error?.code === "PGRST204" || error?.message?.includes("schema cache");
+}
+
+async function readSupabaseSlides(): Promise<HomepageSliderItem[]> {
+  try {
+    const { data, error } = await supabaseAdmin.from("homepage_slider").select("slides").eq("id", "singleton").single();
+    if (!error && Array.isArray(data?.slides)) {
+      return normalizeSlides(data.slides as Partial<HomepageSliderItem>[]);
+    }
+
+    if (error && !isMissingRowError(error) && !isMissingColumnError(error)) {
+      console.error("Unable to load homepage slider:", error.message);
+    }
+  } catch (error) {
+    console.error("Unable to load homepage slider:", error);
+  }
+
+  try {
+    const { data, error } = await supabaseAdmin.from("homepage_slider").select("data").eq("id", "singleton").single();
+    if (!error && Array.isArray(data?.data)) {
+      return normalizeSlides(data.data as Partial<HomepageSliderItem>[]);
+    }
+
+    if (error && !isMissingRowError(error) && !isMissingColumnError(error)) {
+      console.error("Unable to load fallback homepage slider:", error.message);
+    }
+  } catch (error) {
+    console.error("Unable to load fallback homepage slider:", error);
+  }
+
+  const settings = await getStoreSettings();
+  return normalizeSlides(settings.homepageSliderItems ?? defaultSlides);
+}
+
+async function writeSupabaseSlides(slides: HomepageSliderItem[]) {
+  const normalizedSlides = normalizeSlides(slides);
+  const settings = await getStoreSettings();
+
+  await updateStoreSettings({
+    ...settings,
+    homepageSliderItems: normalizedSlides
+  });
+
+  return normalizedSlides;
 }
 
 export async function getHomepageSliderItems(): Promise<HomepageSliderItem[]> {
   try {
-    return await readLocalSlides();
-  } catch {
+    return await readSupabaseSlides();
+  } catch (error) {
+    console.error("Unable to get homepage slider items:", error);
     return defaultSlides;
   }
 }
 
 export async function updateHomepageSliderItems(slides: HomepageSliderItem[]) {
-  const normalizedSlides = normalizeSlides(slides);
-  return writeLocalSlides(normalizedSlides);
+  return writeSupabaseSlides(slides);
 }
 
 export async function getHomepageSliderSettings(): Promise<StoreSettings> {
