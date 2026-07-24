@@ -393,6 +393,28 @@ function sortByCreatedAt<T extends { createdAt: string }>(entries: T[]) {
   );
 }
 
+function mapSupabaseNotification(row: {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at: string;
+  related_id?: string | null;
+  related_type?: string | null;
+}): AdminNotification {
+  return {
+    id: row.id,
+    title: row.title,
+    message: row.message,
+    type: row.type as AdminNotification["type"],
+    isRead: row.is_read,
+    createdAt: row.created_at,
+    relatedId: row.related_id,
+    relatedType: row.related_type
+  };
+}
+
 export function CommerceStoreProvider({ children }: PropsWithChildren) {
   const defaults = getDefaultStore();
   const [isReady, setIsReady] = useState(false);
@@ -882,7 +904,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
             : null;
 
         // 1. Create Admin Notification for New Order
-        void supabaseClient.from("notifications").insert({
+        const { data: newOrderNotification, error: newOrderNotificationError } = await supabaseClient.from("notifications").insert({
           title: "New Order",
           message: `Order ${order.id} placed by ${order.customerName} for LKR ${order.total}.`,
           type: "order",
@@ -890,10 +912,15 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
           related_id: order.id,
           related_type: "order",
           recipient_id: null
-        });
+        }).select().single();
+        if (newOrderNotificationError) {
+          console.error("Failed to create new order notification:", newOrderNotificationError);
+        } else if (newOrderNotification) {
+          setNotifications((previous) => [mapSupabaseNotification(newOrderNotification), ...previous.filter((entry) => entry.id !== newOrderNotification.id)]);
+        }
 
         // 2. Create Customer Success Notification in history
-        void supabaseClient.from("notifications").insert({
+        const { error: customerOrderNotificationError } = await supabaseClient.from("notifications").insert({
           title: "Order placed successfully!",
           message: "Your order has been received and is now being processed.",
           type: "order",
@@ -902,6 +929,9 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
           related_type: "order",
           recipient_id: order.customerId
         });
+        if (customerOrderNotificationError) {
+          console.error("Failed to create customer order notification:", customerOrderNotificationError);
+        }
 
         // Helper to check and trigger low stock alerts
         const triggerLowStockNotification = async (prod: Product) => {
@@ -1111,7 +1141,7 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         const nextCustomers = [customer, ...customers];
 
         // Trigger Admin Notification for New Customer Registration
-        void supabaseClient.from("notifications").insert({
+        const { data: newCustomerNotification, error: newCustomerNotificationError } = await supabaseClient.from("notifications").insert({
           title: "New Customer Registration",
           message: `${customer.name} (${customer.email}) has registered a new account.`,
           type: "system",
@@ -1119,7 +1149,12 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
           related_id: customer.id,
           related_type: "customer",
           recipient_id: null
-        });
+        }).select().single();
+        if (newCustomerNotificationError) {
+          console.error("Failed to create customer registration notification:", newCustomerNotificationError);
+        } else if (newCustomerNotification) {
+          setNotifications((previous) => [mapSupabaseNotification(newCustomerNotification), ...previous.filter((entry) => entry.id !== newCustomerNotification.id)]);
+        }
 
         if (dataMode === "firestore") {
           const db = getFirestoreDb();
