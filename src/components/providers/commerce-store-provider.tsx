@@ -265,6 +265,43 @@ function filterDeletedRecords<T extends { id: string }>(records: T[], deletedIds
   return records.filter((record) => !deletedIds.has(record.id));
 }
 
+function getMissingRequiredColumn(error: { code?: string; message?: string } | null) {
+  if (error?.code !== "23502") {
+    return null;
+  }
+
+  return error.message?.match(/null value in column "([^"]+)"/)?.[1] ?? null;
+}
+
+function getLegacyColumnValue(value: Record<string, unknown>, column: string): unknown {
+  const firstImage = Array.isArray(value.images) ? value.images[0] : undefined;
+  const imageUrl =
+    typeof firstImage === "object" && firstImage && "url" in firstImage && typeof firstImage.url === "string"
+      ? firstImage.url
+      : undefined;
+
+  const candidates: Record<string, unknown> = {
+    name: value.productName ?? value.name ?? value.fullName ?? value.username ?? value.id,
+    title: value.productName ?? value.name ?? value.fullName ?? value.id,
+    sku: value.sku ?? value.id,
+    description: value.description ?? "",
+    price: value.price ?? value.total ?? 0,
+    stock: value.stockQuantity ?? 0,
+    stock_quantity: value.stockQuantity ?? 0,
+    category: value.category ?? "Uncategorized",
+    image: value.mainImage ?? imageUrl ?? "",
+    image_url: value.mainImage ?? imageUrl ?? "",
+    email: value.email ?? `${String(value.id)}@berryclothing.local`,
+    username: value.username ?? value.id,
+    status: value.status ?? "Active",
+    role: value.role ?? "admin",
+    total: value.total ?? 0,
+    customer_name: value.customerName ?? value.name ?? "Customer"
+  };
+
+  return candidates[column];
+}
+
 async function deleteProductCloudinaryAssets(product?: Product) {
   if (!product?.images?.length) {
     return;
@@ -354,16 +391,33 @@ async function writeRecord<T extends { id: string }>(table: CollectionName, valu
     .limit(1);
 
   if (!lookupError) {
-    const { error } = existing?.length
-      ? await supabaseClient.from(table).update(payload).eq("app_id", value.id)
-      : await supabaseClient.from(table).insert(payload);
+    let legacyCompatiblePayload: Record<string, unknown> = payload;
 
-    if (!error) {
-      return;
-    }
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const { error } = existing?.length
+        ? await supabaseClient.from(table).update(legacyCompatiblePayload).eq("app_id", value.id)
+        : await supabaseClient.from(table).insert(legacyCompatiblePayload);
 
-    if (!isStorageSchemaError(error)) {
-      throw new Error(`Unable to save ${table}: ${error.message}`);
+      if (!error) {
+        return;
+      }
+
+      const requiredColumn = getMissingRequiredColumn(error);
+      const requiredValue = requiredColumn
+        ? getLegacyColumnValue(value as unknown as Record<string, unknown>, requiredColumn)
+        : undefined;
+
+      if (!requiredColumn || requiredValue === undefined || requiredColumn in legacyCompatiblePayload) {
+        if (!isStorageSchemaError(error)) {
+          throw new Error(`Unable to save ${table}: ${error.message}`);
+        }
+        break;
+      }
+
+      legacyCompatiblePayload = {
+        ...legacyCompatiblePayload,
+        [requiredColumn]: requiredValue
+      };
     }
   }
 
