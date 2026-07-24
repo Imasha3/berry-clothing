@@ -16,6 +16,7 @@ export function AdminShell({ children }: PropsWithChildren) {
   const { currentRole, currentUser, logout } = useAdminSession();
   const { notifications, markNotificationRead } = useCommerceStore();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [animateBell, setAnimateBell] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef(0);
@@ -44,6 +45,10 @@ export function AdminShell({ children }: PropsWithChildren) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleNotificationClick = async (notification: any) => {
     await markNotificationRead(notification.id);
     setShowNotifications(false);
@@ -70,7 +75,7 @@ export function AdminShell({ children }: PropsWithChildren) {
   return (
     <div className="min-h-screen bg-[#fcf6f2]">
       <div className="mx-auto grid min-h-screen max-w-[1600px] lg:grid-cols-[280px_1fr]">
-        <aside className="sticky top-0 h-screen border-r border-black/5 bg-[#171212] p-6 text-white overflow-y-auto scrollbar-thin scroll-smooth">
+        <aside className="sticky top-0 hidden h-screen overflow-y-auto border-r border-black/5 bg-[#171212] p-6 text-white lg:block">
           <Link href="/admin/dashboard" className="block rounded-[24px] bg-white px-4 py-4">
             <Image
               src="/berry-logo.jpeg"
@@ -120,13 +125,80 @@ export function AdminShell({ children }: PropsWithChildren) {
             ))}
           </nav>
         </aside>
+        {isMobileMenuOpen ? (
+          <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
+            <button
+              type="button"
+              aria-label="Close navigation menu"
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+            <aside className="relative flex h-full w-[min(86vw,340px)] flex-col overflow-y-auto bg-[#171212] p-5 text-white shadow-2xl">
+              <div className="flex items-center justify-between gap-3">
+                <Link href="/admin/dashboard" className="rounded-2xl bg-white px-3 py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Image src="/berry-logo.jpeg" alt="Berry logo" width={160} height={80} className="h-10 w-auto" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl"
+                  aria-label="Close navigation menu"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="mt-5 rounded-2xl bg-white/10 p-4">
+                <p className="text-sm font-semibold">{currentUser.fullName}</p>
+                <p className="mt-1 text-sm text-white/70">@{currentUser.username}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge>{currentRole.name}</Badge>
+                  <Badge tone={currentUser.status === "Active" ? "success" : "warning"}>{currentUser.status}</Badge>
+                </div>
+              </div>
+              <nav className="mt-6 space-y-2">
+                {modules.map((module) => (
+                  <Link
+                    key={module.href}
+                    href={module.href}
+                    className={cn(
+                      "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm transition",
+                      pathname?.startsWith(module.href)
+                        ? "bg-berry-500 text-white"
+                        : "text-white/75 hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs">{module.icon}</span>
+                    <span>{module.label}</span>
+                  </Link>
+                ))}
+              </nav>
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className="mt-auto rounded-2xl border border-white/20 px-4 py-3 text-left text-sm font-semibold text-white"
+              >
+                Logout
+              </button>
+            </aside>
+          </div>
+        ) : null}
         <div className="flex min-h-screen flex-col">
-          <header className="flex flex-wrap items-center justify-between gap-4 border-b border-black/5 bg-white px-6 py-4">
-            <div>
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-black/5 bg-white px-4 py-4 sm:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(true)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-black/10 text-xl text-ink lg:hidden"
+                aria-label="Open navigation menu"
+              >
+                ☰
+              </button>
+              <div className="min-w-0">
               <p className="text-sm uppercase tracking-[0.25em] text-berry-600">Admin Panel</p>
-              <h1 className="font-display text-2xl text-ink">Operational Control Center</h1>
+                <h1 className="truncate font-display text-xl text-ink sm:text-2xl">Operational Control Center</h1>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               <style>{`
                 @keyframes bellWobble {
                   0%, 100% { transform: rotate(0); }
@@ -167,7 +239,7 @@ export function AdminShell({ children }: PropsWithChildren) {
                   ) : null}
                 </button>
                 {showNotifications ? (
-                  <div className="absolute right-0 top-14 z-20 w-[360px] rounded-[24px] bg-white/80 border border-white/20 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-md">
+                  <div className="absolute right-0 top-14 z-20 w-[calc(100vw-2rem)] max-w-[360px] rounded-[24px] border border-white/20 bg-white/80 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.08)] backdrop-blur-md">
                     <div className="flex items-center justify-between gap-3 border-b border-black/5 pb-2">
                       <div>
                         <p className="text-sm font-semibold text-ink">Alerts</p>
@@ -206,7 +278,7 @@ export function AdminShell({ children }: PropsWithChildren) {
                   </div>
                 ) : null}
               </div>
-              <div className="rounded-[24px] border border-black/10 bg-[#fcf6f2] px-4 py-3 text-right">
+              <div className="hidden rounded-[24px] border border-black/10 bg-[#fcf6f2] px-4 py-3 text-right sm:block">
                 <div className="flex items-center justify-end gap-3">
                   <div>
                     <p className="text-sm font-semibold text-ink">{currentUser.fullName}</p>
@@ -221,7 +293,7 @@ export function AdminShell({ children }: PropsWithChildren) {
               </div>
             </div>
           </header>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="flex-1 p-4 sm:p-6">{children}</main>
         </div>
       </div>
     </div>
