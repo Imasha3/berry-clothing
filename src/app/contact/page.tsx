@@ -86,20 +86,24 @@ export default function ContactPage() {
 
       // 2. Generate Admin Notification
       const messageId = messageData?.id || null;
-      const { error: notifError } = await supabaseClient
-        .from("notifications")
-        .insert({
-          title: "New Contact Message",
-          message: `${name.trim()} sent a message.`,
-          type: "system",
-          is_read: false,
-          related_id: messageId,
-          related_type: "contact_message",
-          recipient_id: null
-        });
+      try {
+        const { error: notifError } = await supabaseClient
+          .from("notifications")
+          .insert({
+            title: "New Contact Message",
+            message: `${name.trim()} sent a message.`,
+            type: "system",
+            is_read: false,
+            related_id: messageId,
+            related_type: "contact_message",
+            recipient_id: null
+          });
 
-      if (notifError) {
-        console.error("Error inserting admin notification:", notifError.message);
+        if (notifError) {
+          console.error("Error inserting admin notification:", notifError.message);
+        }
+      } catch (notificationError) {
+        console.error("Failed to insert contact notification:", notificationError);
       }
 
       setSuccess(true);
