@@ -292,12 +292,10 @@ async function deleteProductCloudinaryAssets(product?: Product) {
 async function seedRecords<T extends { id: string }>(table: CollectionName, fallback: T[]) {
   try {
     await Promise.all(fallback.map((entry) => writeRecord(table, entry)));
-    await supabaseClient
-      .from(table)
-      .upsert(
-        { app_id: seededMarkerId, data: { seededAt: new Date().toISOString() }, updated_at: new Date().toISOString() },
-        { onConflict: "app_id" }
-      );
+    await writeRecord(table, {
+      id: seededMarkerId,
+      seededAt: new Date().toISOString()
+    } as T);
     return true;
   } catch (error) {
     console.error(`Unable to seed ${table}. Run the latest Supabase migrations.`, error);
@@ -341,24 +339,41 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
 }
 
 async function writeRecord<T extends { id: string }>(table: CollectionName, value: T) {
-  await forgetDeletedRecord(table, value.id);
-
-  const now = new Date().toISOString();
-  const { error } = await supabaseClient
-    .from(table)
-    .upsert({ app_id: value.id, data: value, updated_at: now }, { onConflict: "app_id" });
-
-  if (!error) {
-    return;
+  try {
+    await forgetDeletedRecord(table, value.id);
+  } catch (error) {
+    console.warn(`Unable to clear the deleted ${table} record marker.`, error);
   }
 
-  if (!isStorageSchemaError(error)) {
-    throw error;
+  const now = new Date().toISOString();
+  const payload = { app_id: value.id, data: value, updated_at: now };
+  const { data: existing, error: lookupError } = await supabaseClient
+    .from(table)
+    .select("id")
+    .eq("app_id", value.id)
+    .limit(1);
+
+  if (!lookupError) {
+    const { error } = existing?.length
+      ? await supabaseClient.from(table).update(payload).eq("app_id", value.id)
+      : await supabaseClient.from(table).insert(payload);
+
+    if (!error) {
+      return;
+    }
+
+    if (!isStorageSchemaError(error)) {
+      throw new Error(`Unable to save ${table}: ${error.message}`);
+    }
+  }
+
+  if (lookupError && !isStorageSchemaError(lookupError)) {
+    throw new Error(`Unable to save ${table}: ${lookupError.message}`);
   }
 
   const legacy = await supabaseClient.from(table).upsert({ id: value.id, data: value });
   if (legacy.error) {
-    throw new Error(`Unable to save ${table}. Please run the latest Supabase migrations.`);
+    throw new Error(`Unable to save ${table}: ${legacy.error.message}. Apply the latest Supabase migration if this table uses a UUID id.`);
   }
 }
 

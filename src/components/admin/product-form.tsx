@@ -106,6 +106,18 @@ function createPersistableProductImage(image: EditableProductImage) {
   };
 }
 
+function getSaveErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  if (error && typeof error === "object" && "message" in error && typeof error.message === "string") {
+    return error.message;
+  }
+
+  return "Unable to save product.";
+}
+
 function createVariantId() {
   return `variant-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -509,7 +521,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
         }
         router.push("/admin/products");
       } catch (error) {
-        setMessage(error instanceof Error ? error.message : "Unable to save product.");
+        setMessage(getSaveErrorMessage(error));
         setIsSaving(false);
       }
       return;
@@ -539,7 +551,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       await updateProduct(initialProduct!.id, normalizedProduct);
       setMessage("Product updated successfully.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to update product.");
+      setMessage(getSaveErrorMessage(error));
     } finally {
       setIsSaving(false);
     }
