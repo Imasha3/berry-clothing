@@ -37,16 +37,30 @@ create policy homepage_slider_public_read on public.homepage_slider for select t
 create policy homepage_slider_public_insert on public.homepage_slider for insert to anon, authenticated with check (true);
 create policy homepage_slider_public_update on public.homepage_slider for update to anon, authenticated using (true) with check (true);
 
-insert into public.store_settings (id, settings, updated_at)
-values ('singleton', '{}'::jsonb, now())
-on conflict (id) do nothing;
+do $$
+declare
+  store_settings_id_type text;
+begin
+  select data_type
+  into store_settings_id_type
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'store_settings'
+    and column_name = 'id';
 
-update public.store_settings
-set
-  settings = coalesce(nullif(settings, '{}'::jsonb), data, settings),
-  updated_at = now()
-where id = 'singleton'
-  and data is not null;
+  if store_settings_id_type in ('text', 'character varying', 'character') then
+    insert into public.store_settings (id, settings, updated_at)
+    values ('singleton', '{}'::jsonb, now())
+    on conflict (id) do nothing;
+
+    update public.store_settings
+    set
+      settings = coalesce(nullif(settings, '{}'::jsonb), data, settings),
+      updated_at = now()
+    where id = 'singleton'
+      and data is not null;
+  end if;
+end $$;
 
 insert into public.homepage_slider (id, slides, updated_at)
 values (
@@ -55,8 +69,8 @@ values (
     (
       select settings -> 'homepageSliderItems'
       from public.store_settings
-      where id = 'singleton'
-        and jsonb_typeof(settings -> 'homepageSliderItems') = 'array'
+      where jsonb_typeof(settings -> 'homepageSliderItems') = 'array'
+      limit 1
     ),
     '[]'::jsonb
   ),
@@ -79,22 +93,36 @@ where id = 'singleton'
   and jsonb_typeof(data) = 'array'
   and jsonb_array_length(slides) = 0;
 
-update public.store_settings
-set
-  settings = jsonb_set(
-    settings,
-    '{homepageSliderItems}',
-    coalesce(
-      (
-        select slides
-        from public.homepage_slider
-        where id = 'singleton'
-          and jsonb_typeof(slides) = 'array'
+do $$
+declare
+  store_settings_id_type text;
+begin
+  select data_type
+  into store_settings_id_type
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'store_settings'
+    and column_name = 'id';
+
+  if store_settings_id_type in ('text', 'character varying', 'character') then
+    update public.store_settings
+    set
+      settings = jsonb_set(
+        settings,
+        '{homepageSliderItems}',
+        coalesce(
+          (
+            select slides
+            from public.homepage_slider
+            where id = 'singleton'
+              and jsonb_typeof(slides) = 'array'
+          ),
+          settings -> 'homepageSliderItems',
+          '[]'::jsonb
+        ),
+        true
       ),
-      settings -> 'homepageSliderItems',
-      '[]'::jsonb
-    ),
-    true
-  ),
-  updated_at = now()
-where id = 'singleton';
+      updated_at = now()
+    where id = 'singleton';
+  end if;
+end $$;

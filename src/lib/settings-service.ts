@@ -51,6 +51,10 @@ function isMissingColumnError(error: { code?: string; message?: string } | null)
   return error?.code === "42703" || error?.code === "PGRST204" || error?.message?.includes("schema cache");
 }
 
+function shouldUseSettingsFallback(error: { code?: string; message?: string } | null) {
+  return isMissingColumnError(error) || error?.code === "22P02";
+}
+
 export async function getStoreSettings(client: SupabaseClient = supabaseAdmin) {
   let settings = DEFAULT_STORE_SETTINGS;
 
@@ -63,7 +67,7 @@ export async function getStoreSettings(client: SupabaseClient = supabaseAdmin) {
 
     if (!error && data?.settings) {
       settings = normalizeStoreSettings(data.settings as Partial<StoreSettings>);
-    } else if (error && !isMissingRowError(error) && !isMissingColumnError(error)) {
+    } else if (error && !isMissingRowError(error) && !shouldUseSettingsFallback(error)) {
       console.error("Unable to load store settings from Supabase:", error.message);
     }
   } catch (error) {
@@ -137,7 +141,7 @@ export async function updateStoreSettings(payload: Partial<StoreSettings>, clien
     .from("store_settings")
     .upsert({ id: "singleton", settings: nextSettings, updated_at: now }, { onConflict: "id" });
 
-  if (settingsError && isMissingColumnError(settingsError)) {
+  if (settingsError && shouldUseSettingsFallback(settingsError)) {
     const { error: fallbackSettingsError } = await client
       .from("homepage_slider")
       .upsert({ id: "store-settings", data: nextSettings, updated_at: now }, { onConflict: "id" });
