@@ -278,7 +278,10 @@ async function deleteProductCloudinaryAssets(product?: Product) {
 
       try {
         const url = `/api/product-images?publicId=${encodeURIComponent(image.id)}&resourceType=${image.resourceType ?? "image"}`;
-        await fetch(url, { method: "DELETE" });
+        const response = await fetch(url, { method: "DELETE" });
+        if (!response.ok) {
+          throw new Error(await response.text());
+        }
       } catch (error) {
         console.error("Failed to delete product asset from Cloudinary:", error);
       }
@@ -295,8 +298,10 @@ async function seedRecords<T extends { id: string }>(table: CollectionName, fall
         { app_id: seededMarkerId, data: { seededAt: new Date().toISOString() }, updated_at: new Date().toISOString() },
         { onConflict: "app_id" }
       );
+    return true;
   } catch (error) {
     console.error(`Unable to seed ${table}. Run the latest Supabase migrations.`, error);
+    return false;
   }
 }
 
@@ -305,7 +310,9 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
   const { data, error } = await supabaseClient.from(table).select("app_id,data").not("app_id", "is", null);
 
   if (!error && data) {
-    const realRows = data.filter((row: any) => row.app_id !== seededMarkerId);
+    const realRows = data.filter(
+      (row: any) => row.app_id !== seededMarkerId && row.data && typeof row.data === "object"
+    );
     const hasSeedMarker = data.some((row: any) => row.app_id === seededMarkerId);
 
     if (realRows.length) {
@@ -314,8 +321,8 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
 
     if (!hasSeedMarker) {
       const filteredFallback = filterDeletedRecords(fallback, deletedIds);
-      await seedRecords(table, filteredFallback);
-      return filteredFallback;
+      const seeded = await seedRecords(table, filteredFallback);
+      return seeded || process.env.NODE_ENV !== "production" ? filteredFallback : [];
     }
 
     return [];
@@ -330,7 +337,7 @@ async function readRecords<T extends { id: string }>(table: CollectionName, fall
     return filterDeletedRecords(legacy.data.map((row: any) => row.data ?? row) as T[], deletedIds);
   }
 
-  return filterDeletedRecords(fallback, deletedIds);
+  return process.env.NODE_ENV !== "production" ? filterDeletedRecords(fallback, deletedIds) : [];
 }
 
 async function writeRecord<T extends { id: string }>(table: CollectionName, value: T) {
@@ -413,7 +420,7 @@ async function insertAdminNotification(payload: {
 
 export function CommerceStoreProvider({ children }: PropsWithChildren) {
   const [isReady, setIsReady] = useState(false);
-  const [products, setProducts] = useState(defaults.products.map(normalizeProduct));
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState(defaults.categories);
   const [orders, setOrders] = useState(defaults.orders);
   const [inventoryMovements, setInventoryMovementsState] = useState(defaults.inventoryMovements);

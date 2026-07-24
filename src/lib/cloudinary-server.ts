@@ -23,6 +23,40 @@ export async function deleteCloudinaryAsset(publicId: string, resourceType: "vid
   return cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
 }
 
+export async function uploadCloudinaryProductAsset(
+  file: Buffer,
+  resourceType: "video" | "image" = "image"
+) {
+  assertCloudinaryCredentials();
+
+  return new Promise<{ secure_url: string; public_id: string; resource_type: string; format: string }>(
+    (resolve, reject) => {
+      const upload = cloudinary.uploader.upload_stream(
+        {
+          folder: PRODUCT_FOLDER,
+          resource_type: resourceType,
+          unique_filename: true
+        },
+        (error, result) => {
+          if (error || !result) {
+            reject(error ?? new Error("Cloudinary did not return an upload result."));
+            return;
+          }
+
+          resolve({
+            secure_url: result.secure_url,
+            public_id: result.public_id,
+            resource_type: result.resource_type,
+            format: result.format
+          });
+        }
+      );
+
+      upload.end(file);
+    }
+  );
+}
+
 export async function listCloudinaryProductImages() {
   assertCloudinaryCredentials();
 

@@ -392,6 +392,7 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
 
           return {
             ...image,
+            id: response.public_id,
             previewUrl: response.secure_url,
             storedPreviewUrl: response.secure_url,
             uploadProgress: 100,
@@ -495,8 +496,11 @@ export function ProductForm({ mode, initialProduct }: ProductFormProps) {
       for (const img of deletedImages) {
         if (img.id.startsWith("berry-clothing/products/")) {
           try {
-            const url = `/api/product-images?publicId=${encodeURIComponent(img.id)}`;
-            await fetch(url, { method: "DELETE" });
+            const url = `/api/product-images?publicId=${encodeURIComponent(img.id)}&resourceType=${img.resourceType ?? "image"}`;
+            const response = await fetch(url, { method: "DELETE" });
+            if (!response.ok) {
+              throw new Error(await response.text());
+            }
           } catch (err) {
             console.error("Failed to delete removed image from Cloudinary:", err);
           }

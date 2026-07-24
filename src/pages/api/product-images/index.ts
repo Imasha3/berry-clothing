@@ -1,6 +1,29 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import multer from "multer";
 import nextConnect from "next-connect";
-import { listCloudinaryProductImages, deleteCloudinaryAsset } from "@/lib/cloudinary-server";
+import {
+  listCloudinaryProductImages,
+  deleteCloudinaryAsset,
+  uploadCloudinaryProductAsset
+} from "@/lib/cloudinary-server";
+
+type UploadRequest = NextApiRequest & {
+  file?: {
+    buffer: Buffer;
+    mimetype: string;
+  };
+};
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 20 * 1024 * 1024 }
+});
+
+function runMiddleware(req: NextApiRequest, res: NextApiResponse, middleware: ReturnType<typeof upload.single>) {
+  return new Promise<void>((resolve, reject) => {
+    middleware(req as any, res as any, (error: unknown) => (error ? reject(error) : resolve()));
+  });
+}
 
 const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
   onError(error, _req, res) {
@@ -14,6 +37,23 @@ const apiRoute = nextConnect<NextApiRequest, NextApiResponse>({
 apiRoute.get(async (_req, res) => {
   const images = await listCloudinaryProductImages();
   res.status(200).json(images);
+});
+
+apiRoute.post(async (req, res) => {
+  await runMiddleware(req, res, upload.single("file"));
+  const file = (req as UploadRequest).file;
+
+  if (!file) {
+    return res.status(400).json({ error: "A product image or video is required." });
+  }
+
+  if (!file.mimetype.startsWith("image/") && !file.mimetype.startsWith("video/")) {
+    return res.status(400).json({ error: "Only image and video files can be uploaded." });
+  }
+
+  const resourceType = file.mimetype.startsWith("video/") ? "video" : "image";
+  const result = await uploadCloudinaryProductAsset(file.buffer, resourceType);
+  return res.status(201).json(result);
 });
 
 apiRoute.delete(async (req, res) => {
@@ -40,3 +80,9 @@ apiRoute.delete(async (req, res) => {
 });
 
 export default apiRoute;
+
+export const config = {
+  api: {
+    bodyParser: false
+  }
+};
