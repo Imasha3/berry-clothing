@@ -1,0 +1,65 @@
+create extension if not exists pgcrypto;
+
+do $$
+declare
+  record_table text;
+  id_data_type text;
+  constraint_name text;
+begin
+  foreach record_table in array array[
+    'products',
+    'categories',
+    'orders',
+    'inventory_movements',
+    'users',
+    'customers',
+    'roles',
+    'permissions',
+    'payment_receipts'
+  ] loop
+    execute format(
+      'create table if not exists public.%I (
+        id uuid primary key default gen_random_uuid(),
+        app_id text,
+        data jsonb not null default ''{}''::jsonb,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      )',
+      record_table
+    );
+
+    execute format('alter table public.%I add column if not exists app_id text', record_table);
+    execute format('alter table public.%I add column if not exists data jsonb not null default ''{}''::jsonb', record_table);
+    execute format('alter table public.%I add column if not exists created_at timestamptz not null default now()', record_table);
+    execute format('alter table public.%I add column if not exists updated_at timestamptz not null default now()', record_table);
+
+    select data_type
+    into id_data_type
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = record_table
+      and column_name = 'id';
+
+    if id_data_type = 'uuid' then
+      execute format('alter table public.%I alter column id set default gen_random_uuid()', record_table);
+    end if;
+
+    constraint_name := record_table || '_app_id_key';
+    if not exists (
+      select 1
+      from pg_constraint
+      where conname = constraint_name
+        and conrelid = format('public.%I', record_table)::regclass
+    ) then
+      execute format('alter table public.%I add constraint %I unique (app_id)', record_table, constraint_name);
+    end if;
+
+    execute format('alter table public.%I enable row level security', record_table);
+    execute format('drop policy if exists %I on public.%I', record_table || '_public_access', record_table);
+    execute format(
+      'create policy %I on public.%I for all to anon, authenticated using (true) with check (true)',
+      record_table || '_public_access',
+      record_table
+    );
+  end loop;
+end $$;
