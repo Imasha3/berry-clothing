@@ -282,6 +282,7 @@ function getLegacyColumnValue(value: Record<string, unknown>, column: string): u
 
   const candidates: Record<string, unknown> = {
     name: value.productName ?? value.name ?? value.fullName ?? value.username ?? value.id,
+    full_name: value.fullName ?? value.name ?? value.username ?? value.id,
     title: value.productName ?? value.name ?? value.fullName ?? value.id,
     sku: value.sku ?? value.id,
     description: value.description ?? "",
@@ -293,6 +294,7 @@ function getLegacyColumnValue(value: Record<string, unknown>, column: string): u
     image_url: value.mainImage ?? imageUrl ?? "",
     email: value.email ?? `${String(value.id)}@berryclothing.local`,
     username: value.username ?? value.id,
+    phone: value.phone ?? "",
     status: value.status ?? "Active",
     role: value.role ?? "admin",
     total: value.total ?? 0,
