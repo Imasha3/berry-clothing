@@ -295,7 +295,7 @@ async function seedRecords<T extends { id: string }>(table: CollectionName, fall
     await writeRecord(table, {
       id: seededMarkerId,
       seededAt: new Date().toISOString()
-    } as T);
+    } as unknown as T);
     return true;
   } catch (error) {
     console.error(`Unable to seed ${table}. Run the latest Supabase migrations.`, error);
