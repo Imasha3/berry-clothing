@@ -38,5 +38,6 @@ export type ModuleKey =
   | "users"
   | "roles"
   | "contact-settings"
+  | "contact-messages"
   | "settings"
   | "email-templates";

@@ -5,6 +5,7 @@ import { SocialLinksRow } from "@/components/common/social-links";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_STORE_SETTINGS, fetchStoreSettings } from "@/lib/store-settings";
 import type { StoreSettings } from "@/types/settings";
+import { supabaseClient } from "@/lib/supabase-client";
 
 const detailIcons = {
   phone: "☎",
@@ -31,6 +32,16 @@ function mergeSettings(settings: StoreSettings): StoreSettings {
 export default function ContactPage() {
   const [settings, setSettings] = useState<StoreSettings>(DEFAULT_STORE_SETTINGS);
 
+  // Form states
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
   useEffect(() => {
     fetchStoreSettings()
       .then((nextSettings) => setSettings(mergeSettings(nextSettings)))
@@ -43,6 +54,66 @@ export default function ContactPage() {
     { icon: detailIcons.address, label: "Address", value: settings.address },
     { icon: detailIcons.website, label: "Website", value: "berryclothing.lk" }
   ].filter((item) => Boolean(item.value));
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setErrorMsg("");
+    setSuccess(false);
+
+    if (!name.trim() || !email.trim() || !message.trim()) {
+      setErrorMsg("Please fill in all required fields (Name, Email, Message).");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // 1. Save contact message in Supabase
+      const { data: messageData, error: messageError } = await supabaseClient
+        .from("contact_messages")
+        .insert({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim() || null,
+          message: message.trim()
+        })
+        .select()
+        .single();
+
+      if (messageError) {
+        throw new Error(messageError.message);
+      }
+
+      // 2. Generate Admin Notification
+      const messageId = messageData?.id || null;
+      const { error: notifError } = await supabaseClient
+        .from("notifications")
+        .insert({
+          title: "New Contact Message",
+          message: `${name.trim()} sent a message.`,
+          type: "system",
+          is_read: false,
+          related_id: messageId,
+          related_type: "contact_message",
+          recipient_id: null
+        });
+
+      if (notifError) {
+        console.error("Error inserting admin notification:", notifError.message);
+      }
+
+      setSuccess(true);
+      setName("");
+      setPhone("");
+      setEmail("");
+      setMessage("");
+    } catch (err: any) {
+      console.error("Failed to submit contact message:", err);
+      setErrorMsg(err.message || "An error occurred while sending your message. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
@@ -75,13 +146,60 @@ export default function ContactPage() {
         <div className="rounded-[8px] bg-white p-8 shadow-soft ring-1 ring-black/5">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-berry-700">Message Us</p>
           <h2 className="mt-3 font-display text-4xl font-light text-ink">Send a quick note</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <input placeholder="Name" className="rounded-2xl border border-black/10 px-4 py-3" />
-            <input placeholder="Phone" className="rounded-2xl border border-black/10 px-4 py-3" />
-            <input placeholder="Email" className="rounded-2xl border border-black/10 px-4 py-3 sm:col-span-2" />
-            <textarea placeholder="Message" className="min-h-40 rounded-2xl border border-black/10 px-4 py-3 sm:col-span-2" />
-          </div>
-          <Button className="mt-6">Send Message</Button>
+          
+          {success ? (
+            <div className="mt-6 rounded-2xl bg-emerald-50 p-5 text-emerald-800 border border-emerald-100 animate-in fade-in zoom-in-95 duration-300">
+              <p className="font-semibold text-base">✔️ Your message has been sent successfully.</p>
+              <p className="mt-2 text-sm text-emerald-700">We'll get back to you soon.</p>
+              <button 
+                onClick={() => setSuccess(false)} 
+                className="mt-4 text-xs font-semibold text-emerald-800 underline hover:text-emerald-900"
+              >
+                Send another message
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <input 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Name" 
+                  required
+                  className="rounded-2xl border border-black/10 px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-berry-200" 
+                />
+                <input 
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Phone (optional)" 
+                  className="rounded-2xl border border-black/10 px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-berry-200" 
+                />
+                <input 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  required
+                  placeholder="Email" 
+                  className="rounded-2xl border border-black/10 px-4 py-3 w-full sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-berry-200" 
+                />
+                <textarea 
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  required
+                  placeholder="Message" 
+                  className="min-h-40 rounded-2xl border border-black/10 px-4 py-3 w-full sm:col-span-2 focus:outline-none focus:ring-2 focus:ring-berry-200" 
+                />
+              </div>
+
+              {errorMsg ? (
+                <p className="text-sm font-semibold text-rose-600">{errorMsg}</p>
+              ) : null}
+
+              <Button type="submit" disabled={submitting} className="w-full sm:w-auto mt-2">
+                {submitting ? "Sending..." : "Send Message"}
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

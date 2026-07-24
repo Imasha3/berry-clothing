@@ -31,6 +31,7 @@ import { mockPermissions, type MockPermissionEntry } from "@/data/mockPermission
 import { mockProducts } from "@/data/mockProducts";
 import { mockRoles, mockUsers } from "@/data/mockUsers";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { supabaseClient } from "@/lib/supabase-client";
 import { firestoreCollections, getFirestoreDb } from "@/lib/firestore";
 import { calculateDiscountedPrice } from "@/lib/product";
 import type { AdminActivityLogEntry, AdminNotification } from "@/types/admin";
@@ -77,7 +78,15 @@ interface CommerceStoreState {
   addRole: (role: Role) => Promise<void>;
   updateRole: (roleId: string, updates: Partial<Role>) => Promise<void>;
   addActivityLog: (entry: Omit<AdminActivityLogEntry, "id" | "createdAt">) => Promise<void>;
-  addNotification: (notification: Omit<AdminNotification, "id" | "createdAt">) => Promise<void>;
+  addNotification: (notification: {
+    title: string;
+    message: string;
+    type: string;
+    isRead?: boolean;
+    relatedId?: string | null;
+    relatedType?: string | null;
+    recipientId?: string | null;
+  }) => Promise<void>;
   markNotificationRead: (notificationId: string) => Promise<void>;
 }
 
@@ -402,8 +411,102 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
   const [paymentReceipts, setPaymentReceipts] = useState<FirestorePaymentReceipt[]>(
     defaults.paymentReceipts
   );
-  const [notifications, setNotifications] = useState<AdminNotification[]>(defaults.notifications);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
   const [activityLog, setActivityLog] = useState<AdminActivityLogEntry[]>(defaults.activityLog);
+
+  // Load and subscribe to Supabase notifications (Admin only: recipient_id IS NULL)
+  useEffect(() => {
+    let active = true;
+
+    const loadNotifications = async () => {
+      try {
+        const { data, error } = await supabaseClient
+          .from("notifications")
+          .select("*")
+          .is("recipient_id", null)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error loading notifications from Supabase:", error);
+          return;
+        }
+
+        if (data && active) {
+          const mapped: AdminNotification[] = data.map((row: any) => ({
+            id: row.id,
+            title: row.title,
+            message: row.message,
+            type: row.type as any,
+            isRead: row.is_read,
+            createdAt: row.created_at,
+            relatedId: row.related_id,
+            relatedType: row.related_type
+          } as any));
+          setNotifications(mapped);
+        }
+      } catch (err) {
+        console.error("Failed to load notifications from Supabase:", err);
+      }
+    };
+
+    void loadNotifications();
+
+    const channel = supabaseClient
+      .channel("supabase-realtime-notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        (payload) => {
+          if (!active) return;
+          const { eventType, new: newRow, old: oldRow } = payload;
+
+          if (eventType === "INSERT") {
+            if (newRow.recipient_id === null) {
+              const newNotif: AdminNotification = {
+                id: newRow.id,
+                title: newRow.title,
+                message: newRow.message,
+                type: newRow.type as any,
+                isRead: newRow.is_read,
+                createdAt: newRow.created_at,
+                relatedId: newRow.related_id,
+                relatedType: newRow.related_type
+              } as any;
+              setNotifications((prev) => {
+                if (prev.some((n) => n.id === newNotif.id)) return prev;
+                return [newNotif, ...prev];
+              });
+            }
+          } else if (eventType === "UPDATE") {
+            if (newRow.recipient_id === null) {
+              const updatedNotif: AdminNotification = {
+                id: newRow.id,
+                title: newRow.title,
+                message: newRow.message,
+                type: newRow.type as any,
+                isRead: newRow.is_read,
+                createdAt: newRow.created_at,
+                relatedId: newRow.related_id,
+                relatedType: newRow.related_type
+              } as any;
+              setNotifications((prev) =>
+                prev.map((n) => (n.id === updatedNotif.id ? updatedNotif : n))
+              );
+            } else {
+              setNotifications((prev) => prev.filter((n) => n.id !== newRow.id));
+            }
+          } else if (eventType === "DELETE") {
+            setNotifications((prev) => prev.filter((n) => n.id !== oldRow.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      void supabaseClient.removeChannel(channel);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -420,7 +523,6 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
       setRoles(nextStore.roles);
       setPermissions(nextStore.permissions);
       setPaymentReceipts(nextStore.paymentReceipts);
-      setNotifications(sortByCreatedAt(nextStore.notifications));
       setActivityLog(sortByCreatedAt(nextStore.activityLog));
       setDataMode("mock");
       setIsReady(true);
@@ -487,7 +589,6 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         setRoles(firestoreRoles);
         setPermissions(firestorePermissions);
         setPaymentReceipts(firestorePaymentReceipts);
-        setNotifications(sortByCreatedAt(readPersistedStore().notifications));
         setActivityLog(sortByCreatedAt(readPersistedStore().activityLog));
         setDataMode("firestore");
         setIsReady(true);
@@ -780,6 +881,87 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
               }
             : null;
 
+        // 1. Create Admin Notification for New Order
+        void supabaseClient.from("notifications").insert({
+          title: "New Order",
+          message: `Order ${order.id} placed by ${order.customerName} for LKR ${order.total}.`,
+          type: "order",
+          is_read: false,
+          related_id: order.id,
+          related_type: "order",
+          recipient_id: null
+        });
+
+        // 2. Create Customer Success Notification in history
+        void supabaseClient.from("notifications").insert({
+          title: "Order placed successfully!",
+          message: "Your order has been received and is now being processed.",
+          type: "order",
+          is_read: false,
+          related_id: order.id,
+          related_type: "order",
+          recipient_id: order.customerId
+        });
+
+        // Helper to check and trigger low stock alerts
+        const triggerLowStockNotification = async (prod: Product) => {
+          try {
+            const { data } = await supabaseClient
+              .from("notifications")
+              .select("id")
+              .eq("type", "low_stock")
+              .eq("related_id", prod.id)
+              .eq("is_read", false);
+
+            if (data && data.length > 0) return; // duplicate prevention
+
+            await supabaseClient.from("notifications").insert({
+              title: "Low Stock Alert",
+              message: `Product "${prod.productName}" is low in stock (${prod.stockQuantity} remaining).`,
+              type: "system",
+              is_read: false,
+              related_id: prod.id,
+              related_type: "product",
+              recipient_id: null
+            });
+          } catch (e) {
+            console.error("Failed to trigger low stock notification:", e);
+          }
+        };
+
+        // 3. Deduct stock levels and check for low stock
+        const updatedProducts = products.map((product) => {
+          let productChanged = false;
+          const updatedVariants = product.variants.map((variant) => {
+            const orderItem = order.items.find(
+              (item) =>
+                item.productName === product.productName &&
+                item.size === variant.size &&
+                item.color === variant.colorName
+            );
+            if (orderItem) {
+              productChanged = true;
+              return {
+                ...variant,
+                stockQuantity: Math.max(0, variant.stockQuantity - orderItem.quantity)
+              };
+            }
+            return variant;
+          });
+
+          if (productChanged) {
+            const updatedProduct = normalizeProduct({
+              ...product,
+              variants: updatedVariants
+            });
+            if (updatedProduct.stockQuantity <= updatedProduct.minStockLevel) {
+              void triggerLowStockNotification(updatedProduct);
+            }
+            return updatedProduct;
+          }
+          return product;
+        });
+
         if (dataMode === "firestore") {
           const db = getFirestoreDb();
           if (db) {
@@ -788,16 +970,24 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
             if (nextReceipt) {
               batch.set(doc(db, firestoreCollections.paymentReceipts, nextReceipt.id), nextReceipt);
             }
+            updatedProducts.forEach((prod) => {
+              batch.set(doc(db, firestoreCollections.products, prod.id), prod);
+            });
             await batch.commit();
             return;
           }
         }
 
+        setProducts(updatedProducts);
         const nextOrders = [order, ...orders];
         const nextPaymentReceipts = nextReceipt ? [nextReceipt, ...paymentReceipts] : paymentReceipts;
         setOrders(nextOrders);
         setPaymentReceipts(nextPaymentReceipts);
-        persistCurrentMockStore({ orders: nextOrders, paymentReceipts: nextPaymentReceipts });
+        persistCurrentMockStore({
+          orders: nextOrders,
+          paymentReceipts: nextPaymentReceipts,
+          products: updatedProducts
+        });
       },
       updateOrder: async (orderId, updates) => {
         const existingOrder = orders.find((order) => order.id === orderId);
@@ -815,6 +1005,97 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         };
         const nextOrders = orders.map((order) => (order.id === orderId ? nextOrder : order));
 
+        // Helper to trigger customer status notifications
+        const createCustomerStatusNotification = async (ord: Order, newStatus: string) => {
+          let title = "";
+          let message = "";
+
+          switch (newStatus) {
+            case "Pending":
+              title = "✔️ Order is pending verification";
+              message = `Your order ${ord.id} is pending verification and will be processed shortly.`;
+              break;
+            case "Processing":
+              title = "⚙️ Your order is being processed";
+              message = `Great news! Your order ${ord.id} is now being processed and prepared for shipping.`;
+              break;
+            case "Dispatched":
+            case "Shipped":
+              title = "📦 Your order has been shipped";
+              message = "Track your package from your Orders page.";
+              break;
+            case "Delivered":
+              title = "🏠 Your order has been delivered";
+              message = `Your order ${ord.id} has been delivered. We hope you love your new Berry Clothing item(s)!`;
+              break;
+            case "Cancelled":
+              title = "❌ Your order has been cancelled";
+              message = `Your order ${ord.id} has been cancelled. If you have questions, please reach out to our support.`;
+              break;
+            case "Completed":
+              title = "🎉 Your order has been completed";
+              message = "Thank you for shopping with Berry Clothing.";
+              break;
+            default:
+              return;
+          }
+
+          try {
+            // Prevent duplicate notifications
+            const { data } = await supabaseClient
+              .from("notifications")
+              .select("id")
+              .eq("recipient_id", ord.customerId)
+              .eq("related_id", ord.id)
+              .eq("title", title);
+
+            if (data && data.length > 0) return;
+
+            await supabaseClient.from("notifications").insert({
+              title,
+              message,
+              type: "order_status_update",
+              is_read: false,
+              related_id: ord.id,
+              related_type: "order",
+              recipient_id: ord.customerId
+            });
+          } catch (e) {
+            console.error("Failed to create customer status notification:", e);
+          }
+        };
+
+        // Trigger customer status notification
+        if (updates.status && updates.status !== existingOrder.status) {
+          void createCustomerStatusNotification(nextOrder, updates.status);
+        }
+
+        // Trigger Payment Received admin notification
+        if (updates.paymentStatus === "Paid" && existingOrder.paymentStatus !== "Paid") {
+          void supabaseClient.from("notifications").insert({
+            title: "Payment Received",
+            message: `Payment received and verified for order ${existingOrder.id}.`,
+            type: "payment",
+            is_read: false,
+            related_id: existingOrder.id,
+            related_type: "order",
+            recipient_id: null
+          });
+        }
+
+        // Trigger Order Cancelled admin notification
+        if (updates.status === "Cancelled" && existingOrder.status !== "Cancelled") {
+          void supabaseClient.from("notifications").insert({
+            title: "Order Cancelled",
+            message: `Order ${existingOrder.id} has been cancelled by administrator.`,
+            type: "order",
+            is_read: false,
+            related_id: existingOrder.id,
+            related_type: "order",
+            recipient_id: null
+          });
+        }
+
         if (dataMode === "firestore") {
           const db = getFirestoreDb();
           if (db) {
@@ -828,6 +1109,17 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
       },
       addCustomer: async (customer) => {
         const nextCustomers = [customer, ...customers];
+
+        // Trigger Admin Notification for New Customer Registration
+        void supabaseClient.from("notifications").insert({
+          title: "New Customer Registration",
+          message: `${customer.name} (${customer.email}) has registered a new account.`,
+          type: "system",
+          is_read: false,
+          related_id: customer.id,
+          related_type: "customer",
+          recipient_id: null
+        });
 
         if (dataMode === "firestore") {
           const db = getFirestoreDb();
@@ -1012,21 +1304,57 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
         persistCurrentMockStore({ activityLog: nextEntries });
       },
       addNotification: async (notification) => {
-        const nextNotification: AdminNotification = {
-          id: `not-${Date.now()}`,
-          createdAt: new Date().toISOString(),
-          ...notification
-        };
-        const nextNotifications = sortByCreatedAt([nextNotification, ...notifications]);
-        setNotifications(nextNotifications);
-        persistCurrentMockStore({ notifications: nextNotifications });
+        try {
+          const payload = {
+            title: notification.title,
+            message: notification.message,
+            type: notification.type,
+            is_read: false,
+            related_id: notification.relatedId || null,
+            related_type: notification.relatedType || null,
+            recipient_id: notification.recipientId || null
+          };
+          const { data, error } = await supabaseClient.from("notifications").insert(payload).select().single();
+          if (error) {
+            console.error("Error inserting notification to Supabase:", error);
+            return;
+          }
+          if (data?.recipient_id == null) {
+            setNotifications((previous) => [
+              {
+                id: data.id,
+                title: data.title,
+                message: data.message,
+                type: data.type,
+                isRead: data.is_read,
+                createdAt: data.created_at,
+                relatedId: data.related_id,
+                relatedType: data.related_type
+              },
+              ...previous.filter((entry) => entry.id !== data.id)
+            ]);
+          }
+        } catch (e) {
+          console.error("Failed to add notification:", e);
+        }
       },
       markNotificationRead: async (notificationId) => {
-        const nextNotifications = notifications.map((notification) =>
-          notification.id === notificationId ? { ...notification, isRead: true } : notification
-        );
-        setNotifications(nextNotifications);
-        persistCurrentMockStore({ notifications: nextNotifications });
+        try {
+          const { error } = await supabaseClient
+            .from("notifications")
+            .update({ is_read: true })
+            .eq("id", notificationId);
+          if (error) {
+            console.error("Error marking notification read in Supabase:", error);
+          } else {
+            // Update local state immediately for faster UI feedback
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+            );
+          }
+        } catch (e) {
+          console.error("Failed to mark notification as read:", e);
+        }
       }
     }),
     [

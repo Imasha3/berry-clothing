@@ -16,6 +16,7 @@ const moduleRules: Record<ModuleKey, Permission[]> = {
   users: ["users.manage"],
   roles: ["roles.manage"],
   "contact-settings": ["settings.manage"],
+  "contact-messages": ["settings.manage"],
   settings: ["settings.manage"],
   "email-templates": ["email_templates.manage"]
 };

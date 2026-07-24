@@ -57,6 +57,7 @@ export const adminModules: Array<{
   { key: "reviews", href: "/admin/reviews", label: "Reviews", icon: "★" },
   { key: "users", href: "/admin/users", label: "Users & Permissions", icon: "◎" },
   { key: "roles", href: "/admin/roles", label: "Roles", icon: "◇" },
+  { key: "contact-messages", href: "/admin/contact-messages", label: "Contact Messages", icon: "✉" },
   { key: "contact-settings", href: "/admin/contact-settings", label: "Contact Settings", icon: "@" },
   { key: "settings", href: "/admin/settings", label: "Settings", icon: "⚙" }
 ];

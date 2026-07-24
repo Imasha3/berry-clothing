@@ -13,4 +13,6 @@ export interface AdminNotification {
   type: "order" | "payment" | "delivery" | "return" | "system";
   createdAt: string;
   isRead: boolean;
+  relatedId?: string | null;
+  relatedType?: string | null;
 }
