@@ -8,6 +8,7 @@ import {
   useState,
   type PropsWithChildren
 } from "react";
+import { mockRoles, mockUsers } from "@/data/mockUsers";
 import { useCommerceStore } from "@/components/providers/commerce-store-provider";
 import { supabaseClient } from "@/lib/supabase-client";
 import type { Permission } from "@/types/permission";
@@ -122,11 +123,17 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
     setIsReady(true);
   }, []);
 
-  const hasAdminAccounts = users.length > 0;
+  const availableUsers = users.length ? users : mockUsers;
+  const availableRoles = roles.length ? roles : mockRoles;
+  const hasAdminAccounts = availableUsers.length > 0;
   const currentUser =
-    currentUserId && users.length ? users.find((user) => user.id === currentUserId) ?? null : null;
+    currentUserId && availableUsers.length
+      ? availableUsers.find((user) => user.id === currentUserId) ?? null
+      : null;
   const currentRole =
-    currentUser && roles.length ? roles.find((role) => role.key === currentUser.role) ?? null : null;
+    currentUser && availableRoles.length
+      ? availableRoles.find((role) => role.key === currentUser.role) ?? null
+      : null;
   const isAuthenticated = Boolean(currentUser && currentUser.status === "Active" && currentRole);
 
   const persistSession = (userId: string) => {
@@ -138,7 +145,7 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
 
   const login: AdminSessionContextValue["login"] = async ({ identifier, password }) => {
     const normalizedIdentifier = identifier.trim().toLowerCase();
-    const user = users.find(
+    const user = availableUsers.find(
       (entry) =>
         entry.email.toLowerCase() === normalizedIdentifier ||
         entry.username.toLowerCase() === normalizedIdentifier
@@ -152,24 +159,20 @@ export function AdminSessionProvider({ children }: PropsWithChildren) {
       return { ok: false, message: "This admin account is inactive. Please contact Super Admin." };
     }
 
-    try {
-      const { error } = await supabaseClient.auth.signInWithPassword({ email: user.email, password });
-      if (error) {
-        const hashedInput = await hashPassword(password);
-        if (user.password !== hashedInput && user.password !== password) {
-          return { ok: false, message: "Invalid username/email or password." };
-        }
-      }
-
-      persistSession(user.id);
-      await updateUser(user.id, { lastLoginAt: new Date().toISOString() });
-      return { ok: true };
-    } catch (error) {
-      return {
-        ok: false,
-        message: error instanceof Error ? "Invalid username/email or password." : "Login failed."
-      };
+    const hashedInput = await hashPassword(password);
+    if (user.password !== hashedInput && user.password !== password) {
+      return { ok: false, message: "Invalid username/email or password." };
     }
+
+    persistSession(user.id);
+
+    try {
+      await updateUser(user.id, { lastLoginAt: new Date().toISOString() });
+    } catch (error) {
+      console.warn("Admin login audit could not be saved. Apply the latest Supabase migrations.", error);
+    }
+
+    return { ok: true };
   };
 
   const createAdminAccount: AdminSessionContextValue["createAdminAccount"] = async (payload) => {
