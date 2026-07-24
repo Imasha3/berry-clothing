@@ -937,17 +937,21 @@ export function CommerceStoreProvider({ children }: PropsWithChildren) {
             : null;
 
         // 2. Create Customer Success Notification in history
-        const { error: customerOrderNotificationError } = await supabaseClient.from("notifications").insert({
-          title: "Order placed successfully!",
-          message: "Your order has been received and is now being processed.",
-          type: "order",
-          is_read: false,
-          related_id: order.id,
-          related_type: "order",
-          recipient_id: order.customerId
-        });
-        if (customerOrderNotificationError) {
-          console.error("Failed to create customer order notification:", customerOrderNotificationError);
+        try {
+          const { error: customerOrderNotificationError } = await supabaseClient.from("notifications").insert({
+            title: "Order placed successfully!",
+            message: "Your order has been received and is now being processed.",
+            type: "order",
+            is_read: false,
+            related_id: order.id,
+            related_type: "order",
+            recipient_id: order.customerId
+          });
+          if (customerOrderNotificationError) {
+            console.error("Failed to create customer order notification:", customerOrderNotificationError);
+          }
+        } catch (notificationError) {
+          console.error("Failed to create customer order notification:", notificationError);
         }
 
         // Helper to check and trigger low stock alerts
